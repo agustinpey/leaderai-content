@@ -16,54 +16,50 @@ export async function GET(req: NextRequest) {
   const redirectUri = `${baseUrl}/api/instagram/callback`
 
   // 1. Intercambiar code por short-lived token
-  const tokenRes = await fetch(
-    `https://graph.facebook.com/v21.0/oauth/access_token?client_id=${appId}&redirect_uri=${encodeURIComponent(redirectUri)}&client_secret=${appSecret}&code=${code}`
-  )
+  const tokenRes = await fetch('https://api.instagram.com/oauth/access_token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      client_id: appId,
+      client_secret: appSecret,
+      grant_type: 'authorization_code',
+      redirect_uri: redirectUri,
+      code,
+    }),
+  })
   const tokenData = await tokenRes.json()
 
-  if (tokenData.error) {
+  if (tokenData.error_type || !tokenData.access_token) {
+    console.error('Instagram token error:', tokenData)
     return Response.redirect(`${baseUrl}/settings?error=instagram_token`)
   }
 
+  const shortToken = tokenData.access_token
+  const igUserId = tokenData.user_id
+
   // 2. Intercambiar por long-lived token (válido 60 días)
   const llRes = await fetch(
-    `https://graph.facebook.com/v21.0/oauth/access_token?grant_type=fb_exchange_token&client_id=${appId}&client_secret=${appSecret}&fb_exchange_token=${tokenData.access_token}`
+    `https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${appSecret}&access_token=${shortToken}`
   )
   const llData = await llRes.json()
-  const longLivedToken = llData.access_token || tokenData.access_token
+  const longToken = llData.access_token || shortToken
 
-  // 3. Obtener las Pages del usuario y la cuenta de Instagram asociada
-  const pagesRes = await fetch(
-    `https://graph.facebook.com/v21.0/me/accounts?fields=id,name,instagram_business_account&access_token=${longLivedToken}`
+  // 3. Obtener username
+  const profileRes = await fetch(
+    `https://graph.instagram.com/v21.0/${igUserId}?fields=username,name&access_token=${longToken}`
   )
-  const pagesData = await pagesRes.json()
+  const profileData = await profileRes.json()
 
-  let igAccountId = null
-  let igUsername = null
+  const expiresAt = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString()
 
-  if (pagesData.data && pagesData.data.length > 0) {
-    // Buscar la page que tiene Instagram Business Account
-    for (const page of pagesData.data) {
-      if (page.instagram_business_account) {
-        igAccountId = page.instagram_business_account.id
-
-        // Obtener username
-        const igRes = await fetch(
-          `https://graph.facebook.com/v21.0/${igAccountId}?fields=username,name&access_token=${longLivedToken}`
-        )
-        const igData = await igRes.json()
-        igUsername = igData.username || igData.name
-        break
-      }
-    }
-  }
-
-  // 4. Guardar en Supabase
-  const expiresAt = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString() // 60 días
   await upsertIntegration(
     'instagram',
-    { access_token: longLivedToken, token_expires_at: expiresAt },
-    { ig_account_id: igAccountId, ig_username: igUsername }
+    { access_token: longToken, token_expires_at: expiresAt },
+    {
+      ig_user_id: igUserId,
+      ig_account_id: igUserId,
+      ig_username: profileData.username || profileData.name || 'agustin.peyy',
+    }
   )
 
   return Response.redirect(`${baseUrl}/settings?success=instagram`)
