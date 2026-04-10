@@ -111,7 +111,7 @@ export async function DELETE(req: NextRequest) {
     try {
       const events = await calendar.events.list({
         calendarId,
-        privateExtendedProperty: `leaderai_post_id=${postId}`,
+        privateExtendedProperty: [`leaderai_post_id=${postId}`],
         maxResults: 10,
       })
 
