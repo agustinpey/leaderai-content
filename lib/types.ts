@@ -99,6 +99,6 @@ export interface ContentContext {
   pendingPosts: Post[]
 }
 
-export interface PostWithMetrics extends Post {
+export interface PostWithMetrics extends Omit<Post, 'metrics'> {
   metrics: PostMetrics | null
 }
