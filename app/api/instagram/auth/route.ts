@@ -14,8 +14,8 @@ export async function GET(req: NextRequest) {
     'instagram_business_manage_insights',
   ].join(',')
 
-  // Instagram Login API (nueva, no requiere Facebook Page)
-  const authUrl = `https://api.instagram.com/oauth/authorize?client_id=${appId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scopes)}&response_type=code`
+  // Instagram Login API — usar www.instagram.com no api.instagram.com
+  const authUrl = `https://www.instagram.com/oauth/authorize?client_id=${appId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scopes)}&response_type=code`
 
   return Response.redirect(authUrl)
 }
