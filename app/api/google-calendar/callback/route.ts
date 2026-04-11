@@ -12,45 +12,48 @@ export async function GET(req: NextRequest) {
     return Response.redirect(`${baseUrl}/settings?error=google_denied`)
   }
 
-  const clientId = process.env.GOOGLE_CLIENT_ID!
-  const clientSecret = process.env.GOOGLE_CLIENT_SECRET!
-  const redirectUri = `${baseUrl}/api/google-calendar/callback`
+  try {
+    const clientId = process.env.GOOGLE_CLIENT_ID!
+    const clientSecret = process.env.GOOGLE_CLIENT_SECRET!
+    const redirectUri = `${baseUrl}/api/google-calendar/callback`
 
-  const oauth2Client = new google.auth.OAuth2(clientId, clientSecret, redirectUri)
+    const oauth2Client = new google.auth.OAuth2(clientId, clientSecret, redirectUri)
 
-  // Intercambiar code por tokens
-  const { tokens } = await oauth2Client.getToken(code)
-  oauth2Client.setCredentials(tokens)
+    const { tokens } = await oauth2Client.getToken(code)
+    oauth2Client.setCredentials(tokens)
 
-  // Obtener la lista de calendarios para guardar metadata
-  const calendarApi = google.calendar({ version: 'v3', auth: oauth2Client })
-  const calendarList = await calendarApi.calendarList.list()
-  const calendars = (calendarList.data.items || []).map((c) => ({
-    id: c.id,
-    summary: c.summary,
-    primary: c.primary || false,
-    backgroundColor: c.backgroundColor,
-  }))
+    // Obtener calendarios
+    const calendarApi = google.calendar({ version: 'v3', auth: oauth2Client })
+    const calendarList = await calendarApi.calendarList.list()
+    const calendars = (calendarList.data.items || []).map((c) => ({
+      id: c.id,
+      summary: c.summary,
+      primary: c.primary || false,
+      backgroundColor: c.backgroundColor,
+    }))
 
-  // Por defecto, seleccionar el calendario primario
-  const primaryCalendar = calendars.find((c) => c.primary)
+    const primaryCalendar = calendars.find((c) => c.primary)
 
-  const expiresAt = tokens.expiry_date
-    ? new Date(tokens.expiry_date).toISOString()
-    : new Date(Date.now() + 60 * 60 * 1000).toISOString()
+    const expiresAt = tokens.expiry_date
+      ? new Date(tokens.expiry_date).toISOString()
+      : new Date(Date.now() + 60 * 60 * 1000).toISOString()
 
-  await upsertIntegration(
-    'google_calendar',
-    {
-      access_token: tokens.access_token || undefined,
-      refresh_token: tokens.refresh_token || undefined,
-      token_expires_at: expiresAt,
-    },
-    {
-      calendars,
-      selected_calendar_ids: primaryCalendar ? [primaryCalendar.id] : [],
-    }
-  )
+    await upsertIntegration(
+      'google_calendar',
+      {
+        access_token: tokens.access_token || undefined,
+        refresh_token: tokens.refresh_token || undefined,
+        token_expires_at: expiresAt,
+      },
+      {
+        calendars,
+        selected_calendar_ids: primaryCalendar ? [primaryCalendar.id] : [],
+      }
+    )
 
-  return Response.redirect(`${baseUrl}/settings?success=google_calendar`)
+    return Response.redirect(`${baseUrl}/settings?success=google_calendar`)
+  } catch (err: any) {
+    console.error('Google Calendar callback error:', err?.message || err)
+    return Response.redirect(`${baseUrl}/settings?error=google_callback&msg=${encodeURIComponent(err?.message || 'unknown')}`)
+  }
 }
