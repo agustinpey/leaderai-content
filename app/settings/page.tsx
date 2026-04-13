@@ -29,6 +29,7 @@ function SettingsContent() {
 
   const successParam = searchParams.get('success')
   const errorParam = searchParams.get('error')
+  const errorMsg = searchParams.get('msg')
 
   async function fetchStatus() {
     setLoading(true)
@@ -114,7 +115,7 @@ function SettingsContent() {
       )}
       {errorParam && (
         <div className="mb-5 text-xs px-4 py-3 bg-red-500/10 border border-red-500/30 text-red-400 rounded-lg">
-          Error al conectar. Verificá que diste los permisos necesarios.
+          Error al conectar. {errorMsg ? <span className="font-mono">{decodeURIComponent(errorMsg)}</span> : 'Verificá que diste los permisos necesarios.'}
         </div>
       )}
       {syncResult && (
