@@ -9,6 +9,7 @@ const nav = [
   { href: '/calendar', label: 'Calendario', icon: '▦' },
   { href: '/library', label: 'Biblioteca', icon: '⊟' },
   { href: '/analytics', label: 'Analytics', icon: '◈' },
+  { href: '/analyze', label: 'Analizar Reel', icon: '▶' },
   { href: '/settings', label: 'Integraciones', icon: '⚙' },
 ]
 
