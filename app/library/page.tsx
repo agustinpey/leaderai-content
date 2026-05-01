@@ -1,15 +1,15 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { Post, PostFormat, PostStatus } from '@/lib/types'
 
 const STATUS_BADGE: Record<PostStatus, string> = {
-  borrador: 'bg-zinc-800 text-zinc-400 border-zinc-700',
-  listo: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30',
-  programado: 'bg-blue-500/10 text-blue-400 border-blue-500/30',
-  publicado: 'bg-green-500/10 text-green-400 border-green-500/30',
+  borrador: 'bg-zinc-100 text-zinc-500 border-zinc-200',
+  listo: 'bg-yellow-50 text-yellow-700 border-yellow-200',
+  programado: 'bg-blue-50 text-blue-700 border-blue-200',
+  publicado: 'bg-green-50 text-green-700 border-green-200',
 }
 
 const FORMAT_ICON: Record<PostFormat, string> = {
@@ -91,15 +91,15 @@ export default function LibraryPage() {
   }
 
   return (
-    <div className="flex h-screen">
+    <div className="flex h-screen bg-white">
       {/* Lista */}
       <div className="flex-1 flex flex-col p-6 overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
-          <h1 className="text-lg font-semibold text-zinc-100">Biblioteca</h1>
+          <h1 className="text-lg font-semibold text-zinc-900">Biblioteca</h1>
           <button
             onClick={() => setShowNewPost(true)}
-            className="text-sm bg-zinc-100 hover:bg-white text-zinc-900 rounded-lg px-4 py-2 font-medium transition-colors"
+            className="text-sm bg-zinc-900 hover:bg-zinc-800 text-white rounded-lg px-4 py-2 font-medium transition-colors"
           >
             + Nuevo
           </button>
@@ -113,22 +113,22 @@ export default function LibraryPage() {
               onClick={() => setFilterStatus(s)}
               className={`text-xs px-3 py-1.5 rounded-lg border transition-colors capitalize ${
                 filterStatus === s
-                  ? 'bg-zinc-100 text-zinc-900 border-zinc-100'
-                  : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:border-zinc-700 hover:text-zinc-200'
+                  ? 'bg-zinc-900 text-white border-zinc-900'
+                  : 'bg-white text-zinc-500 border-zinc-200 hover:border-zinc-300 hover:text-zinc-700'
               }`}
             >
               {s}
             </button>
           ))}
-          <div className="w-px bg-zinc-800 mx-1" />
+          <div className="w-px bg-zinc-200 mx-1" />
           {(['todos', 'reel', 'carrusel', 'historia', 'foto'] as const).map((f) => (
             <button
               key={f}
               onClick={() => setFilterFormat(f)}
               className={`text-xs px-3 py-1.5 rounded-lg border transition-colors capitalize ${
                 filterFormat === f
-                  ? 'bg-zinc-700 text-zinc-100 border-zinc-600'
-                  : 'bg-zinc-900 text-zinc-500 border-zinc-800 hover:border-zinc-700 hover:text-zinc-300'
+                  ? 'bg-zinc-700 text-white border-zinc-700'
+                  : 'bg-white text-zinc-500 border-zinc-200 hover:border-zinc-300 hover:text-zinc-700'
               }`}
             >
               {f !== 'todos' && <span className="mr-1">{FORMAT_ICON[f as PostFormat]}</span>}
@@ -140,14 +140,14 @@ export default function LibraryPage() {
         {/* Grid de posts */}
         {loading ? (
           <div className="flex-1 flex items-center justify-center">
-            <p className="text-xs text-zinc-600">Cargando...</p>
+            <p className="text-xs text-zinc-400">Cargando...</p>
           </div>
         ) : filtered.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center gap-3">
-            <p className="text-sm text-zinc-600">No hay posts con estos filtros</p>
+            <p className="text-sm text-zinc-400">No hay posts con estos filtros</p>
             <button
               onClick={() => setShowNewPost(true)}
-              className="text-xs text-zinc-400 border border-zinc-800 hover:border-zinc-700 rounded-lg px-4 py-2"
+              className="text-xs text-zinc-500 border border-zinc-200 hover:border-zinc-300 rounded-lg px-4 py-2"
             >
               + Crear el primero
             </button>
@@ -158,21 +158,21 @@ export default function LibraryPage() {
               <div
                 key={post.id}
                 onClick={() => setSelected(post)}
-                className={`flex items-center gap-4 bg-zinc-900 border rounded-xl px-4 py-3.5 cursor-pointer transition-colors ${
+                className={`flex items-center gap-4 bg-white border rounded-xl px-4 py-3.5 cursor-pointer transition-colors ${
                   selected?.id === post.id
-                    ? 'border-zinc-600'
-                    : 'border-zinc-800 hover:border-zinc-700'
+                    ? 'border-zinc-400'
+                    : 'border-zinc-200 hover:border-zinc-300'
                 }`}
               >
-                <div className="w-8 h-8 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center text-sm shrink-0">
+                <div className="w-8 h-8 rounded-lg bg-zinc-50 border border-zinc-200 flex items-center justify-center text-sm shrink-0 text-zinc-500">
                   {FORMAT_ICON[post.format]}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-zinc-200 font-medium truncate">{post.title}</p>
-                  <p className="text-xs text-zinc-600 mt-0.5">
+                  <p className="text-sm text-zinc-800 font-medium truncate">{post.title}</p>
+                  <p className="text-xs text-zinc-400 mt-0.5">
                     {format(new Date(post.created_at), "d MMM yyyy", { locale: es })}
                     {post.tags && post.tags.length > 0 && (
-                      <span className="ml-2 text-zinc-700">{post.tags.slice(0, 2).join(' · ')}</span>
+                      <span className="ml-2 text-zinc-300">{post.tags.slice(0, 2).join(' · ')}</span>
                     )}
                   </p>
                 </div>
@@ -180,7 +180,7 @@ export default function LibraryPage() {
                   {post.status}
                 </span>
                 {(post as any).metrics && (
-                  <div className="text-right text-xs text-zinc-500 shrink-0">
+                  <div className="text-right text-xs text-zinc-400 shrink-0">
                     <div>{(post as any).metrics.saves} saves</div>
                     <div>{(post as any).metrics.reach} reach</div>
                   </div>
@@ -193,13 +193,13 @@ export default function LibraryPage() {
 
       {/* Panel de detalle */}
       {selected && (
-        <div className="w-80 border-l border-zinc-800 p-5 overflow-y-auto flex flex-col gap-4">
+        <div className="w-80 border-l border-zinc-200 p-5 overflow-y-auto flex flex-col gap-4">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-sm font-semibold text-zinc-100">{selected.title}</p>
-              <p className="text-xs text-zinc-500 mt-0.5 capitalize">{selected.format}</p>
+              <p className="text-sm font-semibold text-zinc-900">{selected.title}</p>
+              <p className="text-xs text-zinc-400 mt-0.5 capitalize">{selected.format}</p>
             </div>
-            <button onClick={() => setSelected(null)} className="text-zinc-600 hover:text-zinc-400 text-sm">✕</button>
+            <button onClick={() => setSelected(null)} className="text-zinc-400 hover:text-zinc-600 text-sm">✕</button>
           </div>
 
           {/* Estado */}
@@ -208,7 +208,7 @@ export default function LibraryPage() {
             <select
               value={selected.status}
               onChange={(e) => handleStatusChange(selected.id, e.target.value as PostStatus)}
-              className="w-full text-sm bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-zinc-300 outline-none"
+              className="w-full text-sm bg-white border border-zinc-200 rounded-lg px-3 py-2 text-zinc-700 outline-none"
             >
               <option value="borrador">Borrador</option>
               <option value="listo">Listo</option>
@@ -223,7 +223,7 @@ export default function LibraryPage() {
               <label className="text-xs text-zinc-500 mb-1.5 block">Hooks</label>
               <div className="space-y-1.5">
                 {selected.hooks.map((hook, i) => (
-                  <div key={i} className="text-xs bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-zinc-300">
+                  <div key={i} className="text-xs bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-zinc-600">
                     "{hook}"
                   </div>
                 ))}
@@ -235,7 +235,7 @@ export default function LibraryPage() {
           {selected.script && (
             <div>
               <label className="text-xs text-zinc-500 mb-1.5 block">Guión</label>
-              <div className="text-xs bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-3 text-zinc-300 whitespace-pre-wrap leading-relaxed max-h-60 overflow-y-auto">
+              <div className="text-xs bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-3 text-zinc-600 whitespace-pre-wrap leading-relaxed max-h-60 overflow-y-auto">
                 {selected.script}
               </div>
             </div>
@@ -245,7 +245,7 @@ export default function LibraryPage() {
           {selected.caption && (
             <div>
               <label className="text-xs text-zinc-500 mb-1.5 block">Caption</label>
-              <div className="text-xs bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-3 text-zinc-300 whitespace-pre-wrap leading-relaxed max-h-40 overflow-y-auto">
+              <div className="text-xs bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-3 text-zinc-600 whitespace-pre-wrap leading-relaxed max-h-40 overflow-y-auto">
                 {selected.caption}
               </div>
             </div>
@@ -262,9 +262,9 @@ export default function LibraryPage() {
                   { label: 'Saves', value: (selected as any).metrics.saves },
                   { label: 'Plays', value: (selected as any).metrics.plays },
                 ].map((m) => (
-                  <div key={m.label} className="bg-zinc-800 rounded-lg p-2.5 text-center">
-                    <p className="text-sm font-semibold text-zinc-100">{m.value?.toLocaleString() || 0}</p>
-                    <p className="text-xs text-zinc-500">{m.label}</p>
+                  <div key={m.label} className="bg-zinc-50 border border-zinc-200 rounded-lg p-2.5 text-center">
+                    <p className="text-sm font-semibold text-zinc-900">{m.value?.toLocaleString() || 0}</p>
+                    <p className="text-xs text-zinc-400">{m.label}</p>
                   </div>
                 ))}
               </div>
@@ -275,7 +275,7 @@ export default function LibraryPage() {
           {selected.tags && selected.tags.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
               {selected.tags.map((tag) => (
-                <span key={tag} className="text-xs bg-zinc-800 border border-zinc-700 text-zinc-400 rounded-full px-2 py-0.5">
+                <span key={tag} className="text-xs bg-zinc-50 border border-zinc-200 text-zinc-500 rounded-full px-2 py-0.5">
                   {tag}
                 </span>
               ))}
@@ -284,7 +284,7 @@ export default function LibraryPage() {
 
           <button
             onClick={() => handleDelete(selected.id)}
-            className="mt-auto text-xs text-red-500 hover:text-red-400 border border-red-500/20 hover:border-red-500/40 rounded-lg py-2 transition-colors"
+            className="mt-auto text-xs text-red-600 hover:text-red-500 border border-red-200 hover:border-red-300 rounded-lg py-2 transition-colors"
           >
             Eliminar post
           </button>
@@ -293,9 +293,9 @@ export default function LibraryPage() {
 
       {/* Modal nuevo post */}
       {showNewPost && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 w-full max-w-lg my-auto">
-            <h2 className="text-base font-semibold text-zinc-100 mb-5">Nuevo post</h2>
+        <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white border border-zinc-200 rounded-2xl p-6 w-full max-w-lg my-auto shadow-xl">
+            <h2 className="text-base font-semibold text-zinc-900 mb-5">Nuevo post</h2>
 
             <div className="space-y-4">
               <div>
@@ -305,14 +305,14 @@ export default function LibraryPage() {
                   value={form.title}
                   onChange={(e) => setForm({ ...form, title: e.target.value })}
                   placeholder="Ej: 3 errores que cometen los closers"
-                  className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2.5 text-sm text-zinc-200 placeholder-zinc-600 outline-none focus:border-zinc-500"
+                  className="w-full border border-zinc-200 rounded-xl px-3 py-2.5 text-sm text-zinc-900 placeholder-zinc-400 outline-none focus:border-zinc-400"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs text-zinc-500 mb-1.5 block">Formato</label>
-                  <select value={form.format} onChange={(e) => setForm({ ...form, format: e.target.value as PostFormat })} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2.5 text-sm text-zinc-300 outline-none">
+                  <select value={form.format} onChange={(e) => setForm({ ...form, format: e.target.value as PostFormat })} className="w-full border border-zinc-200 rounded-xl px-3 py-2.5 text-sm text-zinc-700 outline-none">
                     <option value="reel">Reel</option>
                     <option value="carrusel">Carrusel</option>
                     <option value="historia">Historia</option>
@@ -321,7 +321,7 @@ export default function LibraryPage() {
                 </div>
                 <div>
                   <label className="text-xs text-zinc-500 mb-1.5 block">Estado</label>
-                  <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as PostStatus })} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2.5 text-sm text-zinc-300 outline-none">
+                  <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as PostStatus })} className="w-full border border-zinc-200 rounded-xl px-3 py-2.5 text-sm text-zinc-700 outline-none">
                     <option value="borrador">Borrador</option>
                     <option value="listo">Listo</option>
                     <option value="programado">Programado</option>
@@ -343,7 +343,7 @@ export default function LibraryPage() {
                         setForm({ ...form, hooks })
                       }}
                       placeholder={`Hook ${i + 1}`}
-                      className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-sm text-zinc-300 placeholder-zinc-600 outline-none focus:border-zinc-500"
+                      className="w-full border border-zinc-200 rounded-xl px-3 py-2 text-sm text-zinc-700 placeholder-zinc-400 outline-none focus:border-zinc-400"
                     />
                   ))}
                 </div>
@@ -356,7 +356,7 @@ export default function LibraryPage() {
                   onChange={(e) => setForm({ ...form, script: e.target.value })}
                   rows={5}
                   placeholder="Pegá el guión generado por Claude..."
-                  className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2.5 text-sm text-zinc-300 placeholder-zinc-600 outline-none resize-none focus:border-zinc-500"
+                  className="w-full border border-zinc-200 rounded-xl px-3 py-2.5 text-sm text-zinc-700 placeholder-zinc-400 outline-none resize-none focus:border-zinc-400"
                 />
               </div>
 
@@ -367,7 +367,7 @@ export default function LibraryPage() {
                   onChange={(e) => setForm({ ...form, caption: e.target.value })}
                   rows={3}
                   placeholder="Caption del post..."
-                  className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2.5 text-sm text-zinc-300 placeholder-zinc-600 outline-none resize-none focus:border-zinc-500"
+                  className="w-full border border-zinc-200 rounded-xl px-3 py-2.5 text-sm text-zinc-700 placeholder-zinc-400 outline-none resize-none focus:border-zinc-400"
                 />
               </div>
 
@@ -378,16 +378,16 @@ export default function LibraryPage() {
                   value={form.tags}
                   onChange={(e) => setForm({ ...form, tags: e.target.value })}
                   placeholder="ventas, automatización, leadgen"
-                  className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2.5 text-sm text-zinc-300 placeholder-zinc-600 outline-none focus:border-zinc-500"
+                  className="w-full border border-zinc-200 rounded-xl px-3 py-2.5 text-sm text-zinc-700 placeholder-zinc-400 outline-none focus:border-zinc-400"
                 />
               </div>
             </div>
 
             <div className="flex gap-3 mt-6">
-              <button onClick={() => setShowNewPost(false)} className="flex-1 text-sm border border-zinc-700 text-zinc-400 rounded-xl py-2.5 hover:border-zinc-600 transition-colors">
+              <button onClick={() => setShowNewPost(false)} className="flex-1 text-sm border border-zinc-200 text-zinc-500 rounded-xl py-2.5 hover:border-zinc-300 transition-colors">
                 Cancelar
               </button>
-              <button onClick={handleSave} disabled={!form.title || saving} className="flex-1 text-sm bg-zinc-100 hover:bg-white disabled:bg-zinc-700 text-zinc-900 disabled:text-zinc-500 rounded-xl py-2.5 font-medium transition-colors">
+              <button onClick={handleSave} disabled={!form.title || saving} className="flex-1 text-sm bg-zinc-900 hover:bg-zinc-800 disabled:bg-zinc-200 text-white disabled:text-zinc-400 rounded-xl py-2.5 font-medium transition-colors">
                 {saving ? 'Guardando...' : 'Guardar'}
               </button>
             </div>

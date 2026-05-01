@@ -67,8 +67,8 @@ export default async function DashboardPage() {
     <div className="p-8 max-w-5xl">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-semibold text-zinc-100">Dashboard</h1>
-        <p className="text-sm text-zinc-500 mt-1">
+        <h1 className="text-2xl font-semibold text-zinc-900">Dashboard</h1>
+        <p className="text-sm text-zinc-400 mt-1">
           {format(new Date(), "EEEE d 'de' MMMM", { locale: es })}
         </p>
       </div>
@@ -79,13 +79,13 @@ export default async function DashboardPage() {
           {notifications.map((n: any) => (
             <div
               key={n.id}
-              className="flex items-center gap-3 bg-zinc-800/60 border border-zinc-700 rounded-lg px-4 py-3"
+              className="flex items-center gap-3 bg-zinc-50 border border-zinc-200 rounded-lg px-4 py-3"
             >
-              <span className="text-white text-sm">●</span>
+              <span className="text-zinc-400 text-sm">●</span>
               <div>
-                <p className="text-sm text-zinc-200">{n.message}</p>
+                <p className="text-sm text-zinc-700">{n.message}</p>
                 {n.post && (
-                  <p className="text-xs text-zinc-500 mt-0.5">Post: {n.post.title}</p>
+                  <p className="text-xs text-zinc-400 mt-0.5">Post: {n.post.title}</p>
                 )}
               </div>
             </div>
@@ -101,39 +101,39 @@ export default async function DashboardPage() {
           { label: 'Avg. saves', value: avgSaves },
           { label: 'Programados', value: upcomingPosts.length },
         ].map((stat) => (
-          <div key={stat.label} className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
-            <div className="text-2xl font-semibold text-zinc-100">{stat.value}</div>
-            <div className="text-xs text-zinc-500 mt-1">{stat.label}</div>
+          <div key={stat.label} className="bg-white border border-zinc-200 rounded-xl p-5">
+            <div className="text-2xl font-semibold text-zinc-900">{stat.value}</div>
+            <div className="text-xs text-zinc-400 mt-1">{stat.label}</div>
           </div>
         ))}
       </div>
 
       <div className="grid grid-cols-2 gap-6">
         {/* Posts recientes */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
+        <div className="bg-white border border-zinc-200 rounded-xl p-5">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-medium text-zinc-100">Posts recientes</h2>
-            <Link href="/library" className="text-xs text-zinc-500 hover:text-zinc-300">
+            <h2 className="text-sm font-medium text-zinc-900">Posts recientes</h2>
+            <Link href="/library" className="text-xs text-zinc-400 hover:text-zinc-700">
               Ver todos →
             </Link>
           </div>
           <div className="space-y-3">
             {recentPosts.length === 0 && (
-              <p className="text-xs text-zinc-600">No hay posts aún</p>
+              <p className="text-xs text-zinc-400">No hay posts aún</p>
             )}
             {recentPosts.map((post: any) => (
               <div key={post.id} className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="text-sm text-zinc-200 truncate">{post.title}</p>
-                  <p className="text-xs text-zinc-600 mt-0.5">
+                  <p className="text-sm text-zinc-800 truncate">{post.title}</p>
+                  <p className="text-xs text-zinc-400 mt-0.5">
                     {post.format} ·{' '}
                     <span
                       className={
                         post.status === 'publicado'
-                          ? 'text-green-500'
+                          ? 'text-green-600'
                           : post.status === 'programado'
-                          ? 'text-blue-400'
-                          : 'text-zinc-500'
+                          ? 'text-blue-600'
+                          : 'text-zinc-400'
                       }
                     >
                       {post.status}
@@ -142,8 +142,8 @@ export default async function DashboardPage() {
                 </div>
                 {post.metrics && (
                   <div className="text-right shrink-0">
-                    <p className="text-xs text-zinc-400">{post.metrics.saves} saves</p>
-                    <p className="text-xs text-zinc-600">{post.metrics.reach} reach</p>
+                    <p className="text-xs text-zinc-500">{post.metrics.saves} saves</p>
+                    <p className="text-xs text-zinc-400">{post.metrics.reach} reach</p>
                   </div>
                 )}
               </div>
@@ -152,43 +152,43 @@ export default async function DashboardPage() {
         </div>
 
         {/* Última recomendación semanal */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
+        <div className="bg-white border border-zinc-200 rounded-xl p-5">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-medium text-zinc-100">Análisis semanal</h2>
-            <Link href="/analytics" className="text-xs text-zinc-500 hover:text-zinc-300">
+            <h2 className="text-sm font-medium text-zinc-900">Análisis semanal</h2>
+            <Link href="/analytics" className="text-xs text-zinc-400 hover:text-zinc-700">
               Ver completo →
             </Link>
           </div>
           {!insight ? (
-            <p className="text-xs text-zinc-600">
+            <p className="text-xs text-zinc-400">
               El análisis se genera cada lunes a las 8am automáticamente.
             </p>
           ) : (
             <div className="space-y-3">
-              <p className="text-xs text-zinc-500">
+              <p className="text-xs text-zinc-400">
                 Semana del {format(new Date(insight.week_start), 'dd/MM')} al{' '}
                 {format(new Date(insight.week_end), 'dd/MM')} · {insight.total_posts} posts
               </p>
               {insight.recommendations?.slice(0, 2).map((rec: any, i: number) => (
-                <div key={i} className="border-l-2 border-zinc-700 pl-3">
-                  <p className="text-sm text-zinc-200 font-medium">{rec.titulo}</p>
-                  <p className="text-xs text-zinc-500 mt-0.5">{rec.descripcion}</p>
+                <div key={i} className="border-l-2 border-zinc-200 pl-3">
+                  <p className="text-sm text-zinc-800 font-medium">{rec.titulo}</p>
+                  <p className="text-xs text-zinc-400 mt-0.5">{rec.descripcion}</p>
                 </div>
               ))}
             </div>
           )}
 
           {/* Quick actions */}
-          <div className="mt-5 pt-4 border-t border-zinc-800 grid grid-cols-2 gap-2">
+          <div className="mt-5 pt-4 border-t border-zinc-200 grid grid-cols-2 gap-2">
             <Link
               href="/chat"
-              className="text-center text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg py-2.5 transition-colors"
+              className="text-center text-xs bg-zinc-50 hover:bg-zinc-100 text-zinc-600 border border-zinc-200 rounded-lg py-2.5 transition-colors"
             >
               ✦ Generar guión
             </Link>
             <Link
               href="/calendar"
-              className="text-center text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg py-2.5 transition-colors"
+              className="text-center text-xs bg-zinc-50 hover:bg-zinc-100 text-zinc-600 border border-zinc-200 rounded-lg py-2.5 transition-colors"
             >
               ▦ Programar post
             </Link>
@@ -198,15 +198,15 @@ export default async function DashboardPage() {
 
       {/* Próximos a publicar */}
       {upcomingPosts.length > 0 && (
-        <div className="mt-6 bg-zinc-900 border border-zinc-800 rounded-xl p-5">
-          <h2 className="text-sm font-medium text-zinc-100 mb-4">Próximos a publicar</h2>
+        <div className="mt-6 bg-white border border-zinc-200 rounded-xl p-5">
+          <h2 className="text-sm font-medium text-zinc-900 mb-4">Próximos a publicar</h2>
           <div className="grid grid-cols-3 gap-3">
             {upcomingPosts.map((post: any) => (
-              <div key={post.id} className="bg-zinc-800/60 rounded-lg p-3">
-                <p className="text-sm text-zinc-200 font-medium truncate">{post.title}</p>
-                <p className="text-xs text-zinc-500 mt-1">{post.format}</p>
+              <div key={post.id} className="bg-zinc-50 border border-zinc-200 rounded-lg p-3">
+                <p className="text-sm text-zinc-800 font-medium truncate">{post.title}</p>
+                <p className="text-xs text-zinc-400 mt-1">{post.format}</p>
                 {post.scheduled_at && (
-                  <p className="text-xs text-blue-400 mt-1">
+                  <p className="text-xs text-blue-600 mt-1">
                     {format(new Date(post.scheduled_at), 'dd/MM HH:mm')}
                   </p>
                 )}

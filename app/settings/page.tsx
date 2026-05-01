@@ -31,6 +31,10 @@ function SettingsContent() {
   const errorParam = searchParams.get('error')
   const errorMsg = searchParams.get('msg')
 
+  const isOAuthError = syncResult?.toLowerCase().includes('invalid oauth') ||
+    syncResult?.toLowerCase().includes('oauth access token') ||
+    syncResult?.toLowerCase().includes('token')
+
   async function fetchStatus() {
     setLoading(true)
     try {
@@ -98,47 +102,62 @@ function SettingsContent() {
   return (
     <div className="p-6 max-w-2xl">
       <div className="mb-8">
-        <h1 className="text-lg font-semibold text-zinc-100">Integraciones</h1>
-        <p className="text-xs text-zinc-500 mt-1">Conectá tus cuentas para automatizar el flujo de contenido</p>
+        <h1 className="text-lg font-semibold text-zinc-900">Integraciones</h1>
+        <p className="text-xs text-zinc-400 mt-1">Conectá tus cuentas para automatizar el flujo de contenido</p>
       </div>
 
-      {/* Banners de éxito/error */}
+      {/* Banners de éxito/error por URL params */}
       {successParam === 'instagram' && (
-        <div className="mb-5 text-xs px-4 py-3 bg-green-500/10 border border-green-500/30 text-green-400 rounded-lg">
+        <div className="mb-5 text-xs px-4 py-3 bg-green-50 border border-green-200 text-green-700 rounded-lg">
           ✓ Instagram conectado correctamente
         </div>
       )}
       {successParam === 'google_calendar' && (
-        <div className="mb-5 text-xs px-4 py-3 bg-green-500/10 border border-green-500/30 text-green-400 rounded-lg">
+        <div className="mb-5 text-xs px-4 py-3 bg-green-50 border border-green-200 text-green-700 rounded-lg">
           ✓ Google Calendar conectado correctamente
         </div>
       )}
       {errorParam && (
-        <div className="mb-5 text-xs px-4 py-3 bg-red-500/10 border border-red-500/30 text-red-400 rounded-lg">
+        <div className="mb-5 text-xs px-4 py-3 bg-red-50 border border-red-200 text-red-700 rounded-lg">
           Error al conectar. {errorMsg ? <span className="font-mono">{decodeURIComponent(errorMsg)}</span> : 'Verificá que diste los permisos necesarios.'}
         </div>
       )}
+
+      {/* Banner de resultado de sync */}
       {syncResult && (
-        <div className={`mb-5 text-xs px-4 py-3 rounded-lg border ${syncResult.startsWith('✓') ? 'bg-green-500/10 border-green-500/30 text-green-400' : 'bg-red-500/10 border-red-500/30 text-red-400'}`}>
-          {syncResult}
-          <button onClick={() => setSyncResult(null)} className="ml-3 opacity-50 hover:opacity-100">✕</button>
+        <div className={`mb-5 text-xs px-4 py-3 rounded-lg border flex items-start justify-between gap-3 ${syncResult.startsWith('✓') ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700'}`}>
+          <div className="flex-1">
+            <p>{syncResult}</p>
+            {isOAuthError && (
+              <p className="mt-1.5">
+                El token de Instagram expiró o es inválido.{' '}
+                <a
+                  href="/api/instagram/auth"
+                  className="underline font-medium hover:opacity-80"
+                >
+                  Reconectar Instagram →
+                </a>
+              </p>
+            )}
+          </div>
+          <button onClick={() => setSyncResult(null)} className="opacity-50 hover:opacity-100 shrink-0">✕</button>
         </div>
       )}
 
       {loading ? (
-        <p className="text-xs text-zinc-600">Cargando...</p>
+        <p className="text-xs text-zinc-400">Cargando...</p>
       ) : (
         <div className="space-y-5">
           {/* Instagram */}
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
+          <div className="bg-white border border-zinc-200 rounded-2xl p-5">
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center text-white text-sm font-bold">
                   IG
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-zinc-100">Instagram</p>
-                  <p className="text-xs text-zinc-500">
+                  <p className="text-sm font-medium text-zinc-900">Instagram</p>
+                  <p className="text-xs text-zinc-400">
                     {igStatus?.connected
                       ? `Conectado como @${igStatus.metadata?.ig_username || 'usuario'}`
                       : 'No conectado'}
@@ -148,19 +167,19 @@ function SettingsContent() {
               <div className="flex items-center gap-2">
                 {igStatus?.connected && (
                   <>
-                    <span className="text-xs bg-green-500/10 border border-green-500/30 text-green-400 rounded-full px-2 py-0.5">
+                    <span className="text-xs bg-green-50 border border-green-200 text-green-700 rounded-full px-2 py-0.5">
                       Activo
                     </span>
                     <button
                       onClick={handleIgSync}
                       disabled={syncing}
-                      className="text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 rounded-lg px-3 py-1.5 transition-colors"
+                      className="text-xs bg-zinc-100 hover:bg-zinc-200 text-zinc-600 border border-zinc-200 rounded-lg px-3 py-1.5 transition-colors"
                     >
                       {syncing ? '↻...' : '↻ Sync'}
                     </button>
                     <button
                       onClick={() => handleDisconnect('instagram')}
-                      className="text-xs text-red-500 hover:text-red-400 border border-red-500/20 hover:border-red-500/40 rounded-lg px-2 py-1.5 transition-colors"
+                      className="text-xs text-red-600 hover:text-red-500 border border-red-200 hover:border-red-300 rounded-lg px-2 py-1.5 transition-colors"
                     >
                       Desconectar
                     </button>
@@ -177,33 +196,29 @@ function SettingsContent() {
               </div>
             </div>
 
-            <div className="text-xs text-zinc-600 bg-zinc-800/50 rounded-xl p-3 leading-relaxed">
+            <div className="text-xs text-zinc-400 bg-zinc-50 rounded-xl p-3 leading-relaxed">
               {igStatus?.connected ? (
                 <>
-                  Hacé click en <strong className="text-zinc-400">Sync</strong> para importar tus últimos 25 posts con métricas desde Instagram. También se puede hacer desde la página de Analytics.
+                  Hacé click en <strong className="text-zinc-600">Sync</strong> para importar tus últimos 25 posts con métricas desde Instagram. También se puede hacer desde la página de Analytics.
                 </>
               ) : (
                 <>
-                  Al conectar, la app podrá leer tus posts publicados y las métricas (reach, saves, plays, likes) directamente de Instagram. Requiere una app en{' '}
-                  <a href="https://developers.facebook.com" target="_blank" rel="noopener" className="text-blue-400 hover:underline">
-                    developers.facebook.com
-                  </a>{' '}
-                  con las variables <code className="text-purple-400">INSTAGRAM_APP_ID</code> y <code className="text-purple-400">INSTAGRAM_APP_SECRET</code> en el .env.local.
+                  Al conectar, la app podrá leer tus posts publicados y las métricas (reach, saves, plays, likes) directamente de Instagram.
                 </>
               )}
             </div>
           </div>
 
           {/* Google Calendar */}
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
+          <div className="bg-white border border-zinc-200 rounded-2xl p-5">
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white text-sm font-bold">
                   GC
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-zinc-100">Google Calendar</p>
-                  <p className="text-xs text-zinc-500">
+                  <p className="text-sm font-medium text-zinc-900">Google Calendar</p>
+                  <p className="text-xs text-zinc-400">
                     {gcalStatus?.connected
                       ? `${calendars.length} calendarios disponibles · ${selectedCalendars.length} seleccionado${selectedCalendars.length !== 1 ? 's' : ''}`
                       : 'No conectado'}
@@ -213,19 +228,19 @@ function SettingsContent() {
               <div className="flex items-center gap-2">
                 {gcalStatus?.connected && (
                   <>
-                    <span className="text-xs bg-green-500/10 border border-green-500/30 text-green-400 rounded-full px-2 py-0.5">
+                    <span className="text-xs bg-green-50 border border-green-200 text-green-700 rounded-full px-2 py-0.5">
                       Activo
                     </span>
                     <button
                       onClick={handleGcalSync}
                       disabled={syncing}
-                      className="text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 rounded-lg px-3 py-1.5 transition-colors"
+                      className="text-xs bg-zinc-100 hover:bg-zinc-200 text-zinc-600 border border-zinc-200 rounded-lg px-3 py-1.5 transition-colors"
                     >
                       {syncing ? '↻...' : '↻ Sync posts'}
                     </button>
                     <button
                       onClick={() => handleDisconnect('google_calendar')}
-                      className="text-xs text-red-500 hover:text-red-400 border border-red-500/20 hover:border-red-500/40 rounded-lg px-2 py-1.5 transition-colors"
+                      className="text-xs text-red-600 hover:text-red-500 border border-red-200 hover:border-red-300 rounded-lg px-2 py-1.5 transition-colors"
                     >
                       Desconectar
                     </button>
@@ -260,7 +275,7 @@ function SettingsContent() {
                           className={`w-4 h-4 rounded border transition-colors ${
                             selectedCalendars.includes(cal.id || '')
                               ? 'bg-blue-600 border-blue-600'
-                              : 'border-zinc-600 group-hover:border-zinc-400'
+                              : 'border-zinc-300 group-hover:border-zinc-400'
                           } flex items-center justify-center`}
                         >
                           {selectedCalendars.includes(cal.id || '') && (
@@ -272,9 +287,9 @@ function SettingsContent() {
                         className="w-3 h-3 rounded-full shrink-0"
                         style={{ backgroundColor: cal.backgroundColor || '#4285f4' }}
                       />
-                      <span className="text-sm text-zinc-200">{cal.summary}</span>
+                      <span className="text-sm text-zinc-700">{cal.summary}</span>
                       {cal.primary && (
-                        <span className="text-xs text-zinc-600 ml-1">(principal)</span>
+                        <span className="text-xs text-zinc-400 ml-1">(principal)</span>
                       )}
                     </label>
                   ))}
@@ -282,19 +297,14 @@ function SettingsContent() {
               </div>
             )}
 
-            <div className="text-xs text-zinc-600 bg-zinc-800/50 rounded-xl p-3 leading-relaxed">
+            <div className="text-xs text-zinc-400 bg-zinc-50 rounded-xl p-3 leading-relaxed">
               {gcalStatus?.connected ? (
                 <>
-                  Los posts con fecha programada se crean como eventos en los calendarios seleccionados. Hacé click en <strong className="text-zinc-400">Sync posts</strong> para sincronizar los que ya tenés programados. También podés hacerlo desde el Calendario.
+                  Los posts programados se crean como eventos en los calendarios seleccionados. El Calendario también muestra tus reuniones y eventos existentes de Google Calendar.
                 </>
               ) : (
                 <>
-                  Al conectar, los posts programados se agregan como eventos a tu Google Calendar. Podés elegir a qué calendarios sincronizar. Requiere{' '}
-                  <code className="text-blue-400">GOOGLE_CLIENT_ID</code> y{' '}
-                  <code className="text-blue-400">GOOGLE_CLIENT_SECRET</code> en el .env.local desde{' '}
-                  <a href="https://console.cloud.google.com" target="_blank" rel="noopener" className="text-blue-400 hover:underline">
-                    console.cloud.google.com
-                  </a>.
+                  Al conectar, los posts programados se agregan como eventos a tu Google Calendar. También vas a poder ver tus reuniones y eventos directamente en el Calendario.
                 </>
               )}
             </div>
@@ -307,7 +317,7 @@ function SettingsContent() {
 
 export default function SettingsPage() {
   return (
-    <Suspense fallback={<div className="p-6 text-xs text-zinc-600">Cargando...</div>}>
+    <Suspense fallback={<div className="p-6 text-xs text-zinc-400">Cargando...</div>}>
       <SettingsContent />
     </Suspense>
   )

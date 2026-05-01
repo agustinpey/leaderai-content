@@ -128,7 +128,7 @@ export default function AnalyticsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <p className="text-xs text-zinc-600">Cargando analytics...</p>
+        <p className="text-xs text-zinc-400">Cargando analytics...</p>
       </div>
     )
   }
@@ -142,8 +142,8 @@ export default function AnalyticsPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-lg font-semibold text-zinc-100">Analytics</h1>
-          <p className="text-xs text-zinc-500 mt-0.5">Métricas reales de tu cuenta</p>
+          <h1 className="text-lg font-semibold text-zinc-900">Analytics</h1>
+          <p className="text-xs text-zinc-400 mt-0.5">Métricas reales de tu cuenta</p>
         </div>
         <div className="flex gap-2 items-center flex-wrap">
           {[7, 30, 90].map((d) => (
@@ -152,8 +152,8 @@ export default function AnalyticsPage() {
               onClick={() => setDays(d)}
               className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${
                 days === d
-                  ? 'bg-zinc-100 text-zinc-900 border-zinc-100'
-                  : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:border-zinc-700'
+                  ? 'bg-zinc-900 text-white border-zinc-900'
+                  : 'bg-white text-zinc-500 border-zinc-200 hover:border-zinc-300'
               }`}
             >
               {d}d
@@ -171,7 +171,7 @@ export default function AnalyticsPage() {
           ) : (
             <a
               href="/api/instagram/auth"
-              className="text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 rounded-lg px-3 py-1.5 transition-colors"
+              className="text-xs bg-white hover:bg-zinc-50 text-zinc-600 border border-zinc-200 rounded-lg px-3 py-1.5 transition-colors"
             >
               Conectar Instagram
             </a>
@@ -179,7 +179,7 @@ export default function AnalyticsPage() {
 
           <button
             onClick={() => setShowMetricsModal(true)}
-            className="text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 rounded-lg px-3 py-1.5 transition-colors"
+            className="text-xs bg-white hover:bg-zinc-50 text-zinc-600 border border-zinc-200 rounded-lg px-3 py-1.5 transition-colors"
           >
             + Cargar métricas
           </button>
@@ -188,7 +188,7 @@ export default function AnalyticsPage() {
 
       {/* Sync result */}
       {syncResult && (
-        <div className={`mb-4 text-xs px-4 py-3 rounded-lg border ${syncResult.startsWith('✓') ? 'bg-green-500/10 border-green-500/30 text-green-400' : 'bg-red-500/10 border-red-500/30 text-red-400'}`}>
+        <div className={`mb-4 text-xs px-4 py-3 rounded-lg border ${syncResult.startsWith('✓') ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700'}`}>
           {syncResult}
           <button onClick={() => setSyncResult(null)} className="ml-3 opacity-50 hover:opacity-100">✕</button>
         </div>
@@ -196,7 +196,7 @@ export default function AnalyticsPage() {
 
       {/* Sin tablas en Supabase */}
       {data?.error && (
-        <div className="mb-4 text-xs px-4 py-3 bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 rounded-lg">
+        <div className="mb-4 text-xs px-4 py-3 bg-yellow-50 border border-yellow-200 text-yellow-700 rounded-lg">
           Las tablas de Supabase no están creadas. Ejecutá el schema SQL en el SQL Editor de Supabase.
         </div>
       )}
@@ -210,31 +210,31 @@ export default function AnalyticsPage() {
           { label: 'Avg. Likes', value: summary?.avgLikes || 0 },
           { label: 'Avg. Plays', value: summary?.avgPlays?.toLocaleString() || '0' },
         ].map((s) => (
-          <div key={s.label} className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 text-center">
-            <p className="text-xl font-semibold text-zinc-100">{s.value}</p>
-            <p className="text-xs text-zinc-500 mt-1">{s.label}</p>
+          <div key={s.label} className="bg-white border border-zinc-200 rounded-xl p-4 text-center">
+            <p className="text-xl font-semibold text-zinc-900">{s.value}</p>
+            <p className="text-xs text-zinc-400 mt-1">{s.label}</p>
           </div>
         ))}
       </div>
 
       <div className="grid grid-cols-2 gap-5 mb-5">
         {/* Top por saves */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
-          <h2 className="text-sm font-medium text-zinc-100 mb-4">Top por saves</h2>
+        <div className="bg-white border border-zinc-200 rounded-xl p-5">
+          <h2 className="text-sm font-medium text-zinc-900 mb-4">Top por saves</h2>
           {topBySaves.length === 0 ? (
-            <p className="text-xs text-zinc-600">Sin datos aún — conectá Instagram o cargá métricas manualmente</p>
+            <p className="text-xs text-zinc-400">Sin datos aún — conectá Instagram o cargá métricas manualmente</p>
           ) : (
             <div className="space-y-3">
               {topBySaves.map((post: any, i: number) => (
                 <div key={post.id} className="flex items-center gap-3">
-                  <span className="text-xs text-zinc-600 w-4">{i + 1}</span>
+                  <span className="text-xs text-zinc-400 w-4">{i + 1}</span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-zinc-200 truncate">{post.title}</p>
-                    <p className="text-xs text-zinc-600">{post.format}</p>
+                    <p className="text-sm text-zinc-800 truncate">{post.title}</p>
+                    <p className="text-xs text-zinc-400">{post.format}</p>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className="text-sm font-medium text-zinc-100">{post.metrics?.saves || 0}</p>
-                    <p className="text-xs text-zinc-600">saves</p>
+                    <p className="text-sm font-medium text-zinc-900">{post.metrics?.saves || 0}</p>
+                    <p className="text-xs text-zinc-400">saves</p>
                   </div>
                 </div>
               ))}
@@ -243,26 +243,26 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Por formato */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
-          <h2 className="text-sm font-medium text-zinc-100 mb-4">Rendimiento por formato</h2>
+        <div className="bg-white border border-zinc-200 rounded-xl p-5">
+          <h2 className="text-sm font-medium text-zinc-900 mb-4">Rendimiento por formato</h2>
           {Object.keys(byFormat).length === 0 ? (
-            <p className="text-xs text-zinc-600">Sin datos — publicá y cargá métricas primero</p>
+            <p className="text-xs text-zinc-400">Sin datos — publicá y cargá métricas primero</p>
           ) : (
             <div className="space-y-3">
               {Object.entries(byFormat)
                 .sort(([, a]: any, [, b]: any) => b.avgSaves - a.avgSaves)
                 .map(([fmt, stats]: [string, any]) => (
                   <div key={fmt} className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-zinc-800 rounded-lg flex items-center justify-center text-sm">
+                    <div className="w-8 h-8 bg-zinc-50 border border-zinc-200 rounded-lg flex items-center justify-center text-sm text-zinc-500">
                       {FORMAT_ICON[fmt] || fmt[0]}
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm text-zinc-200 capitalize">{fmt}</p>
-                      <p className="text-xs text-zinc-600">{stats.count} posts</p>
+                      <p className="text-sm text-zinc-800 capitalize">{fmt}</p>
+                      <p className="text-xs text-zinc-400">{stats.count} posts</p>
                     </div>
                     <div className="text-right text-xs">
-                      <p className="text-zinc-300">{stats.avgSaves} saves</p>
-                      <p className="text-zinc-600">{stats.avgReach} reach</p>
+                      <p className="text-zinc-700">{stats.avgSaves} saves</p>
+                      <p className="text-zinc-400">{stats.avgReach} reach</p>
                     </div>
                   </div>
                 ))}
@@ -272,16 +272,16 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Insights semanales */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
+      <div className="bg-white border border-zinc-200 rounded-xl p-5">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-medium text-zinc-100">Análisis semanales</h2>
-          <span className="text-xs text-zinc-600">Generado cada lunes a las 8am</span>
+          <h2 className="text-sm font-medium text-zinc-900">Análisis semanales</h2>
+          <span className="text-xs text-zinc-400">Generado cada lunes a las 8am</span>
         </div>
 
         {insights.length === 0 ? (
           <div className="text-center py-8">
-            <p className="text-xs text-zinc-600 mb-2">No hay análisis semanales aún</p>
-            <p className="text-xs text-zinc-700">El primer análisis se genera automáticamente el próximo lunes</p>
+            <p className="text-xs text-zinc-400 mb-2">No hay análisis semanales aún</p>
+            <p className="text-xs text-zinc-300">El primer análisis se genera automáticamente el próximo lunes</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -289,14 +289,14 @@ export default function AnalyticsPage() {
               <div
                 key={insight.id}
                 onClick={() => setSelectedInsight(selectedInsight?.id === insight.id ? null : insight)}
-                className="border border-zinc-800 hover:border-zinc-700 rounded-xl p-4 cursor-pointer transition-colors"
+                className="border border-zinc-200 hover:border-zinc-300 rounded-xl p-4 cursor-pointer transition-colors"
               >
                 <div className="flex items-center justify-between mb-2">
-                  <p className="text-sm font-medium text-zinc-200">
+                  <p className="text-sm font-medium text-zinc-800">
                     Semana del {format(parseISO(insight.week_start), 'd MMM', { locale: es })} al{' '}
                     {format(parseISO(insight.week_end), 'd MMM yyyy', { locale: es })}
                   </p>
-                  <div className="flex gap-4 text-xs text-zinc-500">
+                  <div className="flex gap-4 text-xs text-zinc-400">
                     <span>{insight.total_posts} posts</span>
                     <span>{insight.avg_saves} avg saves</span>
                     <span>{insight.avg_reach?.toLocaleString()} avg reach</span>
@@ -304,23 +304,23 @@ export default function AnalyticsPage() {
                 </div>
 
                 {selectedInsight?.id === insight.id && (
-                  <div className="mt-3 pt-3 border-t border-zinc-800 space-y-3">
+                  <div className="mt-3 pt-3 border-t border-zinc-200 space-y-3">
                     {insight.top_format && (
-                      <p className="text-xs text-zinc-500">
-                        Formato estrella: <span className="text-zinc-300">{insight.top_format}</span>
+                      <p className="text-xs text-zinc-400">
+                        Formato estrella: <span className="text-zinc-700">{insight.top_format}</span>
                       </p>
                     )}
                     {insight.recommendations?.map((rec: any, i: number) => (
-                      <div key={i} className="border-l-2 border-zinc-700 pl-3">
-                        <p className="text-sm text-zinc-200 font-medium">{rec.titulo}</p>
+                      <div key={i} className="border-l-2 border-zinc-200 pl-3">
+                        <p className="text-sm text-zinc-800 font-medium">{rec.titulo}</p>
                         <p className="text-xs text-zinc-500 mt-0.5">{rec.descripcion}</p>
-                        <p className="text-xs text-zinc-600 mt-1">→ {rec.accion}</p>
+                        <p className="text-xs text-zinc-400 mt-1">→ {rec.accion}</p>
                       </div>
                     ))}
                     {insight.raw_analysis && (
                       <details className="mt-2">
-                        <summary className="text-xs text-zinc-600 cursor-pointer hover:text-zinc-400">Ver análisis completo</summary>
-                        <div className="mt-2 text-xs text-zinc-500 whitespace-pre-wrap leading-relaxed bg-zinc-800 rounded-lg p-3 max-h-60 overflow-y-auto">
+                        <summary className="text-xs text-zinc-400 cursor-pointer hover:text-zinc-600">Ver análisis completo</summary>
+                        <div className="mt-2 text-xs text-zinc-500 whitespace-pre-wrap leading-relaxed bg-zinc-50 border border-zinc-200 rounded-lg p-3 max-h-60 overflow-y-auto">
                           {insight.raw_analysis}
                         </div>
                       </details>
@@ -335,10 +335,10 @@ export default function AnalyticsPage() {
 
       {/* Modal cargar métricas */}
       {showMetricsModal && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 w-full max-w-md">
-            <h2 className="text-base font-semibold text-zinc-100 mb-2">Cargar métricas</h2>
-            <p className="text-xs text-zinc-500 mb-5">
+        <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50 p-4">
+          <div className="bg-white border border-zinc-200 rounded-2xl p-6 w-full max-w-md shadow-xl">
+            <h2 className="text-base font-semibold text-zinc-900 mb-2">Cargar métricas</h2>
+            <p className="text-xs text-zinc-400 mb-5">
               Después de publicar, volvé acá 24h más tarde y cargá las métricas desde Instagram.
             </p>
 
@@ -350,7 +350,7 @@ export default function AnalyticsPage() {
                   value={metricsForm.post_id}
                   onChange={(e) => setMetricsForm({ ...metricsForm, post_id: e.target.value })}
                   placeholder="UUID del post en la biblioteca"
-                  className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2.5 text-sm text-zinc-200 placeholder-zinc-600 outline-none focus:border-zinc-500"
+                  className="w-full border border-zinc-200 rounded-xl px-3 py-2.5 text-sm text-zinc-900 placeholder-zinc-400 outline-none focus:border-zinc-400"
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -369,7 +369,7 @@ export default function AnalyticsPage() {
                       value={(metricsForm as any)[f.key]}
                       onChange={(e) => setMetricsForm({ ...metricsForm, [f.key]: e.target.value })}
                       placeholder="0"
-                      className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-sm text-zinc-300 placeholder-zinc-600 outline-none focus:border-zinc-500"
+                      className="w-full border border-zinc-200 rounded-xl px-3 py-2 text-sm text-zinc-700 placeholder-zinc-400 outline-none focus:border-zinc-400"
                     />
                   </div>
                 ))}
@@ -382,19 +382,19 @@ export default function AnalyticsPage() {
                   value={metricsForm.retention_rate}
                   onChange={(e) => setMetricsForm({ ...metricsForm, retention_rate: e.target.value })}
                   placeholder="42.5"
-                  className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-sm text-zinc-300 placeholder-zinc-600 outline-none focus:border-zinc-500"
+                  className="w-full border border-zinc-200 rounded-xl px-3 py-2 text-sm text-zinc-700 placeholder-zinc-400 outline-none focus:border-zinc-400"
                 />
               </div>
             </div>
 
             <div className="flex gap-3 mt-6">
-              <button onClick={() => setShowMetricsModal(false)} className="flex-1 text-sm border border-zinc-700 text-zinc-400 rounded-xl py-2.5 hover:border-zinc-600">
+              <button onClick={() => setShowMetricsModal(false)} className="flex-1 text-sm border border-zinc-200 text-zinc-500 rounded-xl py-2.5 hover:border-zinc-300">
                 Cancelar
               </button>
               <button
                 onClick={handleSaveMetrics}
                 disabled={!metricsForm.post_id || savingMetrics}
-                className="flex-1 text-sm bg-zinc-100 hover:bg-white disabled:bg-zinc-700 text-zinc-900 disabled:text-zinc-500 rounded-xl py-2.5 font-medium"
+                className="flex-1 text-sm bg-zinc-900 hover:bg-zinc-800 disabled:bg-zinc-200 text-white disabled:text-zinc-400 rounded-xl py-2.5 font-medium"
               >
                 {savingMetrics ? 'Guardando...' : 'Guardar'}
               </button>
