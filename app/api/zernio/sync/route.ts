@@ -35,6 +35,7 @@ export async function POST() {
         const caption = zPost.content || ''
         const publishedAt = zPost.publishedAt
         const analytics = igPlatform.analytics || zPost.analytics
+        console.log(`[zernio-sync] post ${igPostId} analytics:`, JSON.stringify(analytics))
 
         // Determinar formato del post a partir de la URL
         const isReel = igPlatform.platformPostUrl?.includes('/reel/')

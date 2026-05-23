@@ -17,7 +17,11 @@ export async function GET(req: NextRequest) {
 
   if (error) return Response.json({ error: error.message }, { status: 500 })
 
-  const published = posts || []
+  // Supabase returns post_metrics as array (1:N). Normalize to first element.
+  const published = (posts || []).map((p: any) => ({
+    ...p,
+    metrics: Array.isArray(p.metrics) ? p.metrics[0] ?? null : p.metrics,
+  }))
   const withMetrics = published.filter((p: any) => p.metrics)
 
   if (withMetrics.length === 0) {
