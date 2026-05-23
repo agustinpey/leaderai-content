@@ -3,7 +3,7 @@ import { NextRequest } from 'next/server'
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
-  const provider = searchParams.get('provider') as 'instagram' | 'google_calendar' | null
+  const provider = searchParams.get('provider') as 'instagram' | 'google_calendar' | 'zernio' | null
 
   if (!provider) {
     return Response.json({ error: 'provider requerido' }, { status: 400 })

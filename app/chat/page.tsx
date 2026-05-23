@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { ChatMessage, PostFormat } from '@/lib/types'
 
 const QUICK_PROMPTS = [
@@ -18,7 +19,8 @@ interface SaveModal {
   format: PostFormat
 }
 
-export default function ChatPage() {
+function ChatContent() {
+  const searchParams = useSearchParams()
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -28,6 +30,15 @@ export default function ChatPage() {
   const [savedMsg, setSavedMsg] = useState<string | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  // Pre-cargar prompt desde Banco de Ideas
+  useEffect(() => {
+    const ideaPrompt = searchParams.get('idea_prompt')
+    if (ideaPrompt) {
+      setInput(decodeURIComponent(ideaPrompt))
+      textareaRef.current?.focus()
+    }
+  }, [searchParams])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -113,7 +124,18 @@ export default function ChatPage() {
     })
     setSaving(false)
     setSaveModal(null)
-    setSavedMsg('Guión guardado en Biblioteca')
+    setSavedMsg('Borrador guardado en Biblioteca → Posts')
+    setTimeout(() => setSavedMsg(null), 3000)
+  }
+
+  async function handleSaveScript(content: string) {
+    const title = content.split('\n')[0]?.slice(0, 80) || 'Guión sin título'
+    await fetch('/api/scripts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title, content, format: 'reel', status: 'pendiente' }),
+    })
+    setSavedMsg('Guión guardado en Biblioteca → Guiones')
     setTimeout(() => setSavedMsg(null), 3000)
   }
 
@@ -182,12 +204,20 @@ export default function ChatPage() {
                   )}
                 </div>
                 {msg.role === 'assistant' && msg.content && isComplete && (
-                  <button
-                    onClick={() => openSaveModal(msg.content)}
-                    className="self-start text-xs text-zinc-400 hover:text-zinc-700 border border-zinc-200 hover:border-zinc-300 rounded-lg px-3 py-1.5 transition-colors"
-                  >
-                    ↓ Guardar en Biblioteca
-                  </button>
+                  <div className="self-start flex gap-2">
+                    <button
+                      onClick={() => handleSaveScript(msg.content)}
+                      className="text-xs text-zinc-900 hover:text-zinc-700 bg-zinc-100 hover:bg-zinc-200 border border-zinc-200 rounded-lg px-3 py-1.5 transition-colors font-medium"
+                    >
+                      ↓ Guardar guión
+                    </button>
+                    <button
+                      onClick={() => openSaveModal(msg.content)}
+                      className="text-xs text-zinc-400 hover:text-zinc-700 border border-zinc-200 hover:border-zinc-300 rounded-lg px-3 py-1.5 transition-colors"
+                    >
+                      ↓ Guardar como borrador
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
@@ -273,5 +303,13 @@ export default function ChatPage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function ChatPage() {
+  return (
+    <Suspense fallback={<div className="p-6 text-xs text-zinc-400">Cargando...</div>}>
+      <ChatContent />
+    </Suspense>
   )
 }

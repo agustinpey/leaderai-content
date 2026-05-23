@@ -189,6 +189,14 @@ Respondé con este formato JSON exacto (sin markdown, solo el JSON):
     type: 'analisis_listo',
   })
 
+  // Paso adicional: scrape de competidores + generación de ideas (no bloqueante)
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+
+  Promise.all([
+    fetch(`${baseUrl}/api/competitors/scrape`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }).catch(() => null),
+    fetch(`${baseUrl}/api/intelligence/generate`, { method: 'POST' }).catch(() => null),
+  ]).catch(() => null)
+
   return Response.json({
     message: 'Análisis semanal generado',
     insight,

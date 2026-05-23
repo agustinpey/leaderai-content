@@ -67,7 +67,7 @@ export default function AnalyticsPage() {
       const [analyticsRes, insightsRes, igRes] = await Promise.all([
         fetch(`/api/analytics/metrics?days=${days}`),
         fetch('/api/analytics/insights'),
-        fetch('/api/integrations/status?provider=instagram'),
+        fetch('/api/integrations/status?provider=zernio'),
       ])
 
       const analyticsData = analyticsRes.ok ? await analyticsRes.json() : { posts: [], summary: { total: 0, avgReach: 0, avgSaves: 0, avgLikes: 0, avgPlays: 0 }, topBySaves: [], topByReach: [], byFormat: {} }
@@ -111,16 +111,16 @@ export default function AnalyticsPage() {
     setSyncing(true)
     setSyncResult(null)
     try {
-      const res = await fetch('/api/instagram/sync', { method: 'POST' })
+      const res = await fetch('/api/zernio/sync', { method: 'POST' })
       const result = await res.json()
       if (res.ok) {
-        setSyncResult(`✓ ${result.synced} posts sincronizados desde Instagram`)
+        setSyncResult(`✓ ${result.synced} posts sincronizados`)
         fetchData()
       } else {
         setSyncResult(`Error: ${result.error}`)
       }
     } catch {
-      setSyncResult('Error al conectar con Instagram')
+      setSyncResult('Error al sincronizar')
     }
     setSyncing(false)
   }

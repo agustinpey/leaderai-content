@@ -58,8 +58,9 @@ create table if not exists scripts (
   hook text,
   format text check (format in ('reel', 'carrusel', 'historia', 'foto')) default 'reel',
   topic text,
-  status text check (status in ('borrador', 'aprobado', 'usado')) default 'borrador',
+  status text check (status in ('borrador', 'aprobado', 'usado', 'pendiente', 'hecho', 'rehacer')) default 'pendiente',
   post_id uuid references posts(id),
+  source_idea_id uuid,
   created_at timestamptz default now()
 );
 
@@ -120,3 +121,107 @@ create policy "allow all" on weekly_insights for all using (true) with check (tr
 create policy "allow all" on scripts for all using (true) with check (true);
 create policy "allow all" on files for all using (true) with check (true);
 create policy "allow all" on notifications for all using (true) with check (true);
+
+-- ==========================================
+-- MÓDULO: COMPETIDORES
+-- ==========================================
+
+create table if not exists competitors (
+  id uuid primary key default gen_random_uuid(),
+  username text not null unique,
+  display_name text,
+  niche text default 'ai_sales',
+  follower_count integer,
+  avg_engagement_rate numeric(6,4),
+  last_scraped_at timestamptz,
+  active boolean default true,
+  notes text,
+  created_at timestamptz default now()
+);
+
+create table if not exists competitor_posts (
+  id uuid primary key default gen_random_uuid(),
+  competitor_id uuid references competitors(id) on delete cascade,
+  apify_post_id text unique,
+  instagram_url text,
+  caption text,
+  hook_text text,
+  hashtags text[],
+  post_type text check (post_type in ('reel', 'carrusel', 'foto')),
+  likes integer default 0,
+  comments integer default 0,
+  plays integer,
+  estimated_saves integer,
+  engagement_rate numeric(6,4),
+  published_at timestamptz,
+  scraped_at timestamptz default now(),
+  ai_topic text,
+  ai_hook_type text,
+  ai_cta_type text,
+  ai_content_gap boolean default false,
+  created_at timestamptz default now()
+);
+
+create index if not exists idx_competitors_active on competitors(active);
+create index if not exists idx_competitor_posts_competitor on competitor_posts(competitor_id);
+create index if not exists idx_competitor_posts_gap on competitor_posts(ai_content_gap) where ai_content_gap = true;
+
+alter table competitors enable row level security;
+alter table competitor_posts enable row level security;
+create policy "allow all" on competitors for all using (true) with check (true);
+create policy "allow all" on competitor_posts for all using (true) with check (true);
+
+-- ==========================================
+-- MÓDULO: BANCO DE IDEAS (INTELLIGENCE)
+-- ==========================================
+
+create table if not exists content_ideas (
+  id uuid primary key default gen_random_uuid(),
+  title text not null,
+  pain_point text not null,
+  content_angle text not null,
+  why_now text,
+  format_suggestion text check (format_suggestion in ('reel', 'carrusel', 'historia', 'foto')) default 'reel',
+  topic_tag text,
+  estimated_performance text check (estimated_performance in ('bajo', 'medio', 'alto', 'viral')) default 'medio',
+  estimated_save_rate numeric(5,2),
+  hooks text[],
+  source text check (source in ('competitor_gap', 'own_performance', 'niche_research', 'manual')) default 'niche_research',
+  status text check (status in ('nueva', 'en_proceso', 'usada', 'descartada')) default 'nueva',
+  full_brief text,
+  brief_generated_at timestamptz,
+  sent_to_chat_at timestamptz,
+  converted_to_post_id uuid references posts(id),
+  actual_save_rate numeric(5,2),
+  generation_batch_id uuid,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+create table if not exists intelligence_runs (
+  id uuid primary key default gen_random_uuid(),
+  run_type text check (run_type in ('weekly', 'manual', 'competitor_only')) default 'manual',
+  status text check (status in ('running', 'completed', 'failed')) default 'running',
+  competitors_scraped integer default 0,
+  competitor_posts_found integer default 0,
+  ideas_generated integer default 0,
+  own_posts_analyzed integer default 0,
+  winning_posts_count integer default 0,
+  saves_threshold numeric(5,2),
+  error_message text,
+  started_at timestamptz default now(),
+  completed_at timestamptz
+);
+
+create index if not exists idx_content_ideas_status on content_ideas(status);
+create index if not exists idx_content_ideas_topic on content_ideas(topic_tag);
+create index if not exists idx_content_ideas_batch on content_ideas(generation_batch_id);
+
+create trigger content_ideas_updated_at
+  before update on content_ideas
+  for each row execute function update_updated_at();
+
+alter table content_ideas enable row level security;
+alter table intelligence_runs enable row level security;
+create policy "allow all" on content_ideas for all using (true) with check (true);
+create policy "allow all" on intelligence_runs for all using (true) with check (true);

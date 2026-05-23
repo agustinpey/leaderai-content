@@ -1,6 +1,6 @@
 import { supabaseAdmin } from './supabase'
 
-export type Provider = 'instagram' | 'google_calendar'
+export type Provider = 'instagram' | 'google_calendar' | 'zernio'
 
 export async function getIntegration(provider: Provider) {
   const { data, error } = await supabaseAdmin

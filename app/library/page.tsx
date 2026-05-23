@@ -21,7 +21,32 @@ const FORMAT_ICON: Record<PostFormat, string> = {
 
 type FilterStatus = PostStatus | 'todos'
 
+interface ScriptRecord {
+  id: string
+  title: string
+  content: string
+  hook: string | null
+  format: string
+  topic: string | null
+  status: 'pendiente' | 'hecho' | 'rehacer' | 'borrador' | 'aprobado' | 'usado'
+  created_at: string
+}
+
+const SCRIPT_STATUS_STYLE: Record<string, string> = {
+  pendiente: 'bg-zinc-100 text-zinc-500 border-zinc-200',
+  rehacer: 'bg-yellow-50 text-yellow-700 border-yellow-200',
+  hecho: 'bg-green-50 text-green-700 border-green-200',
+  borrador: 'bg-zinc-50 text-zinc-400 border-zinc-200',
+  aprobado: 'bg-blue-50 text-blue-700 border-blue-200',
+  usado: 'bg-purple-50 text-purple-600 border-purple-200',
+}
+
+type LibraryTab = 'posts' | 'guiones'
+
 export default function LibraryPage() {
+  const [tab, setTab] = useState<LibraryTab>('posts')
+
+  // Posts state
   const [posts, setPosts] = useState<Post[]>([])
   const [loading, setLoading] = useState(true)
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('todos')
@@ -39,6 +64,11 @@ export default function LibraryPage() {
     tags: '',
   })
 
+  // Scripts state
+  const [scripts, setScripts] = useState<ScriptRecord[]>([])
+  const [scriptsLoading, setScriptsLoading] = useState(false)
+  const [selectedScript, setSelectedScript] = useState<ScriptRecord | null>(null)
+
   async function fetchPosts() {
     setLoading(true)
     let url = '/api/posts'
@@ -49,7 +79,16 @@ export default function LibraryPage() {
     setLoading(false)
   }
 
+  async function fetchScripts() {
+    setScriptsLoading(true)
+    const res = await fetch('/api/scripts')
+    const data = await res.json()
+    setScripts(data.scripts || [])
+    setScriptsLoading(false)
+  }
+
   useEffect(() => { fetchPosts() }, [filterStatus])
+  useEffect(() => { if (tab === 'guiones') fetchScripts() }, [tab])
 
   const filtered = posts.filter((p) => {
     if (filterFormat !== 'todos' && p.format !== filterFormat) return false
@@ -90,23 +129,55 @@ export default function LibraryPage() {
     fetchPosts()
   }
 
+  async function handleScriptStatusChange(id: string, status: ScriptRecord['status']) {
+    await fetch('/api/scripts', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, status }),
+    })
+    setScripts((prev) => prev.map((s) => (s.id === id ? { ...s, status } : s)))
+    if (selectedScript?.id === id) setSelectedScript({ ...selectedScript, status })
+  }
+
+  async function handleScriptDelete(id: string) {
+    if (!confirm('¿Eliminar este guión?')) return
+    await fetch(`/api/scripts?id=${id}`, { method: 'DELETE' })
+    setSelectedScript(null)
+    fetchScripts()
+  }
+
   return (
     <div className="flex h-screen bg-white">
       {/* Lista */}
       <div className="flex-1 flex flex-col p-6 overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-5">
-          <h1 className="text-lg font-semibold text-zinc-900">Biblioteca</h1>
-          <button
-            onClick={() => setShowNewPost(true)}
-            className="text-sm bg-zinc-900 hover:bg-zinc-800 text-white rounded-lg px-4 py-2 font-medium transition-colors"
-          >
-            + Nuevo
-          </button>
+        {/* Header con tabs */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex bg-zinc-100 rounded-xl p-1 gap-1">
+            <button
+              onClick={() => setTab('posts')}
+              className={`text-sm px-4 py-1.5 rounded-lg font-medium transition-colors ${tab === 'posts' ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500 hover:text-zinc-700'}`}
+            >
+              Posts
+            </button>
+            <button
+              onClick={() => setTab('guiones')}
+              className={`text-sm px-4 py-1.5 rounded-lg font-medium transition-colors ${tab === 'guiones' ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500 hover:text-zinc-700'}`}
+            >
+              Guiones {scripts.length > 0 && <span className="ml-1 text-xs text-zinc-400">({scripts.length})</span>}
+            </button>
+          </div>
+          {tab === 'posts' && (
+            <button
+              onClick={() => setShowNewPost(true)}
+              className="text-sm bg-zinc-900 hover:bg-zinc-800 text-white rounded-lg px-4 py-2 font-medium transition-colors"
+            >
+              + Nuevo
+            </button>
+          )}
         </div>
 
-        {/* Filtros */}
-        <div className="flex gap-2 mb-5 flex-wrap">
+        {/* Filtros — solo en tab posts */}
+        {tab === 'posts' && <div className="flex gap-2 mb-5 flex-wrap">
           {(['todos', 'borrador', 'listo', 'programado', 'publicado'] as FilterStatus[]).map((s) => (
             <button
               key={s}
@@ -135,10 +206,45 @@ export default function LibraryPage() {
               {f}
             </button>
           ))}
-        </div>
+        </div>}
 
-        {/* Grid de posts */}
-        {loading ? (
+        {/* Tab: Guiones */}
+        {tab === 'guiones' && (
+          <div className="flex-1 overflow-y-auto space-y-2 content-start">
+            {scriptsLoading && <p className="text-xs text-zinc-400 text-center py-8">Cargando guiones...</p>}
+            {!scriptsLoading && scripts.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-16 gap-3">
+                <p className="text-sm text-zinc-400">No hay guiones guardados</p>
+                <p className="text-xs text-zinc-300">Generá guiones desde el Chat o el Banco de Ideas</p>
+              </div>
+            )}
+            {scripts.map((s) => (
+              <div
+                key={s.id}
+                onClick={() => setSelectedScript(s.id === selectedScript?.id ? null : s)}
+                className={`flex items-center gap-4 bg-white border rounded-xl px-4 py-3.5 cursor-pointer transition-colors ${
+                  selectedScript?.id === s.id ? 'border-zinc-400' : 'border-zinc-200 hover:border-zinc-300'
+                }`}
+              >
+                <div className="w-8 h-8 rounded-lg bg-zinc-50 border border-zinc-200 flex items-center justify-center text-sm shrink-0 text-zinc-500">
+                  ▶
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-zinc-900 truncate">{s.title}</p>
+                  <p className="text-xs text-zinc-400 mt-0.5">
+                    {s.format} · {new Date(s.created_at).toLocaleDateString('es-AR', { day: 'numeric', month: 'short' })}
+                  </p>
+                </div>
+                <span className={`text-xs px-2 py-0.5 rounded-full border shrink-0 ${SCRIPT_STATUS_STYLE[s.status] || 'bg-zinc-100 text-zinc-400 border-zinc-200'}`}>
+                  {s.status}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Tab: Posts — Grid */}
+        {tab === 'posts' && loading ? (
           <div className="flex-1 flex items-center justify-center">
             <p className="text-xs text-zinc-400">Cargando...</p>
           </div>
@@ -191,7 +297,60 @@ export default function LibraryPage() {
         )}
       </div>
 
-      {/* Panel de detalle */}
+      {/* Panel de detalle — Script */}
+      {tab === 'guiones' && selectedScript && (
+        <div className="w-96 border-l border-zinc-200 p-5 overflow-y-auto flex flex-col gap-4">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-sm font-semibold text-zinc-900">{selectedScript.title}</p>
+              <p className="text-xs text-zinc-400 mt-0.5 capitalize">{selectedScript.format}</p>
+            </div>
+            <button onClick={() => setSelectedScript(null)} className="text-zinc-400 hover:text-zinc-600 text-sm">✕</button>
+          </div>
+
+          {/* Acciones de estado */}
+          <div>
+            <label className="text-xs text-zinc-500 mb-2 block">Estado del guión</label>
+            <div className="grid grid-cols-2 gap-2">
+              {(['pendiente', 'rehacer', 'hecho'] as const).map((s) => (
+                <button
+                  key={s}
+                  onClick={() => handleScriptStatusChange(selectedScript.id, s)}
+                  className={`text-xs py-2 rounded-xl border font-medium transition-colors capitalize ${
+                    selectedScript.status === s
+                      ? SCRIPT_STATUS_STYLE[s]
+                      : 'border-zinc-200 text-zinc-400 hover:bg-zinc-50'
+                  }`}
+                >
+                  {s === 'pendiente' ? '⏸ Pendiente' : s === 'rehacer' ? '↺ Rehacer' : '✓ Hecho'}
+                </button>
+              ))}
+              <button
+                onClick={() => handleScriptDelete(selectedScript.id)}
+                className="text-xs py-2 rounded-xl border border-red-200 text-red-500 hover:bg-red-50 font-medium transition-colors"
+              >
+                ✕ Eliminar
+              </button>
+            </div>
+          </div>
+
+          {/* Contenido del guión */}
+          <div>
+            <label className="text-xs text-zinc-500 mb-2 block">Guión completo</label>
+            <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-4 space-y-1">
+              {selectedScript.content.split('\n').map((line, i) => {
+                if (line.startsWith('## ') || line.startsWith('**')) {
+                  return <p key={i} className="text-xs font-semibold text-zinc-900 mt-2">{line.replace(/^##\s+/, '').replace(/\*\*/g, '')}</p>
+                }
+                if (line.trim() === '') return <div key={i} className="h-1" />
+                return <p key={i} className="text-xs text-zinc-600 leading-relaxed">{line}</p>
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Panel de detalle — Post */}
       {selected && (
         <div className="w-80 border-l border-zinc-200 p-5 overflow-y-auto flex flex-col gap-4">
           <div className="flex items-start justify-between">

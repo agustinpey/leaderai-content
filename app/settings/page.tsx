@@ -26,6 +26,9 @@ function SettingsContent() {
   const [syncing, setSyncing] = useState(false)
   const [syncResult, setSyncResult] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [zernioKey, setZernioKey] = useState('')
+  const [zernioConnecting, setZernioConnecting] = useState(false)
+  const [zernioResult, setZernioResult] = useState<string | null>(null)
 
   const successParam = searchParams.get('success')
   const errorParam = searchParams.get('error')
@@ -39,7 +42,7 @@ function SettingsContent() {
     setLoading(true)
     try {
       const [igRes, gcalRes, calRes] = await Promise.all([
-        fetch('/api/integrations/status?provider=instagram'),
+        fetch('/api/integrations/status?provider=zernio'),
         fetch('/api/integrations/status?provider=google_calendar'),
         fetch('/api/google-calendar/calendars'),
       ])
@@ -93,10 +96,33 @@ function SettingsContent() {
   async function handleIgSync() {
     setSyncing(true)
     setSyncResult(null)
-    const res = await fetch('/api/instagram/sync', { method: 'POST' })
+    const res = await fetch('/api/zernio/sync', { method: 'POST' })
     const data = await res.json()
     setSyncResult(res.ok ? `✓ ${data.message}` : `Error: ${data.error}`)
     setSyncing(false)
+  }
+
+  async function handleZernioConnect() {
+    if (!zernioKey.startsWith('sk_')) {
+      setZernioResult('Error: la API key debe empezar con sk_')
+      return
+    }
+    setZernioConnecting(true)
+    setZernioResult(null)
+    const res = await fetch('/api/zernio/connect', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ api_key: zernioKey }),
+    })
+    const data = await res.json()
+    if (res.ok) {
+      setZernioResult(`✓ ${data.message}`)
+      setZernioKey('')
+      fetchStatus()
+    } else {
+      setZernioResult(`Error: ${data.error}`)
+    }
+    setZernioConnecting(false)
   }
 
   return (
@@ -148,7 +174,7 @@ function SettingsContent() {
         <p className="text-xs text-zinc-400">Cargando...</p>
       ) : (
         <div className="space-y-5">
-          {/* Instagram */}
+          {/* Instagram via Zernio */}
           <div className="bg-white border border-zinc-200 rounded-2xl p-5">
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center gap-3">
@@ -156,11 +182,11 @@ function SettingsContent() {
                   IG
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-zinc-900">Instagram</p>
+                  <p className="text-sm font-medium text-zinc-900">Instagram via Zernio</p>
                   <p className="text-xs text-zinc-400">
                     {igStatus?.connected
-                      ? `Conectado como @${igStatus.metadata?.ig_username || 'usuario'}`
-                      : 'No conectado'}
+                      ? `Conectado como @${igStatus.metadata?.zernio_username || 'usuario'}`
+                      : 'No conectado · ingresá tu API key de Zernio'}
                   </p>
                 </div>
               </div>
@@ -178,32 +204,54 @@ function SettingsContent() {
                       {syncing ? '↻...' : '↻ Sync'}
                     </button>
                     <button
-                      onClick={() => handleDisconnect('instagram')}
+                      onClick={() => handleDisconnect('zernio')}
                       className="text-xs text-red-600 hover:text-red-500 border border-red-200 hover:border-red-300 rounded-lg px-2 py-1.5 transition-colors"
                     >
                       Desconectar
                     </button>
                   </>
                 )}
-                {!igStatus?.connected && (
-                  <a
-                    href="/api/instagram/auth"
-                    className="text-xs bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white rounded-lg px-4 py-2 font-medium transition-all"
-                  >
-                    Conectar
-                  </a>
-                )}
               </div>
             </div>
+
+            {!igStatus?.connected && (
+              <div className="mb-4 space-y-2">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={zernioKey}
+                    onChange={(e) => setZernioKey(e.target.value)}
+                    placeholder="sk_xxxxxxxxxxxxxxxxxxxxxxxx"
+                    className="flex-1 border border-zinc-200 rounded-xl px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 outline-none focus:border-zinc-400 font-mono"
+                  />
+                  <button
+                    onClick={handleZernioConnect}
+                    disabled={zernioConnecting || !zernioKey}
+                    className="text-xs bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 disabled:opacity-50 text-white rounded-xl px-4 py-2 font-medium transition-all whitespace-nowrap"
+                  >
+                    {zernioConnecting ? 'Conectando...' : 'Conectar'}
+                  </button>
+                </div>
+                {zernioResult && (
+                  <p className={`text-xs px-3 py-2 rounded-lg border ${zernioResult.startsWith('✓') ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700'}`}>
+                    {zernioResult}
+                  </p>
+                )}
+              </div>
+            )}
 
             <div className="text-xs text-zinc-400 bg-zinc-50 rounded-xl p-3 leading-relaxed">
               {igStatus?.connected ? (
                 <>
-                  Hacé click en <strong className="text-zinc-600">Sync</strong> para importar tus últimos 25 posts con métricas desde Instagram. También se puede hacer desde la página de Analytics.
+                  Hacé click en <strong className="text-zinc-600">Sync</strong> para importar tus posts con métricas reales. Zernio sincroniza automáticamente cada 6-12hs.
                 </>
               ) : (
                 <>
-                  Al conectar, la app podrá leer tus posts publicados y las métricas (reach, saves, plays, likes) directamente de Instagram.
+                  Obtené tu API key en{' '}
+                  <a href="https://dash.zernio.com" target="_blank" rel="noopener noreferrer" className="underline hover:text-zinc-600">
+                    dash.zernio.com
+                  </a>{' '}
+                  → Settings → API. Conectá tu Instagram en el dashboard de Zernio primero.
                 </>
               )}
             </div>
