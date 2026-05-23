@@ -87,7 +87,7 @@ export default function CompetitorsPage() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('¿Eliminar este competidor?')) return
+    if (!confirm('¿Eliminar este referente?')) return
     await fetch(`/api/competitors?id=${id}`, { method: 'DELETE' })
     setSelected(null)
     setPosts([])
@@ -137,7 +137,7 @@ export default function CompetitorsPage() {
       <div className="w-72 border-r border-zinc-200 flex flex-col shrink-0">
         <div className="px-4 pt-5 pb-3 border-b border-zinc-100">
           <div className="flex items-center justify-between mb-1">
-            <h1 className="text-base font-semibold text-zinc-900">Competidores</h1>
+            <h1 className="text-base font-semibold text-zinc-900">Referentes</h1>
             <button
               onClick={() => setShowAdd(true)}
               className="w-7 h-7 rounded-lg bg-zinc-900 text-white flex items-center justify-center text-sm hover:bg-zinc-700 transition-colors"
@@ -145,7 +145,7 @@ export default function CompetitorsPage() {
               +
             </button>
           </div>
-          <p className="text-xs text-zinc-400">Cuentas de Instagram a trackear</p>
+          <p className="text-xs text-zinc-400">Cuentas de referentes a trackear</p>
         </div>
 
         {/* Botones globales */}
@@ -177,7 +177,7 @@ export default function CompetitorsPage() {
           {loading && <p className="text-xs text-zinc-400 text-center py-4">Cargando...</p>}
           {!loading && competitors.length === 0 && (
             <p className="text-xs text-zinc-400 text-center py-8">
-              Agregá competidores para empezar a trackear
+              Agregá referentes para empezar a trackear
             </p>
           )}
           {competitors.map((c) => (
@@ -218,7 +218,7 @@ export default function CompetitorsPage() {
         {showAdd && (
           <div className="absolute inset-0 bg-black/20 flex items-center justify-center z-50" onClick={() => setShowAdd(false)}>
             <div className="bg-white rounded-2xl p-5 w-72 shadow-xl" onClick={(e) => e.stopPropagation()}>
-              <p className="text-sm font-semibold text-zinc-900 mb-3">Agregar competidor</p>
+              <p className="text-sm font-semibold text-zinc-900 mb-3">Agregar referente</p>
               <input
                 autoFocus
                 type="text"
@@ -242,7 +242,7 @@ export default function CompetitorsPage() {
         {!selected && (
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
-              <p className="text-sm text-zinc-500">Seleccioná un competidor</p>
+              <p className="text-sm text-zinc-500">Seleccioná un referente</p>
               <p className="text-xs text-zinc-400 mt-1">Para ver sus Reels y análisis de contenido</p>
             </div>
           </div>

@@ -7,7 +7,7 @@ const nav = [
   { href: '/', label: 'Dashboard', icon: '⊞' },
   { href: '/chat', label: 'Chat con Claude', icon: '✦' },
   { href: '/ideas', label: 'Banco de Ideas', icon: '◎' },
-  { href: '/competitors', label: 'Competidores', icon: '⊕' },
+  { href: '/competitors', label: 'Referentes', icon: '⊕' },
   { href: '/calendar', label: 'Calendario', icon: '▦' },
   { href: '/library', label: 'Biblioteca', icon: '⊟' },
   { href: '/analytics', label: 'Analytics', icon: '◈' },
