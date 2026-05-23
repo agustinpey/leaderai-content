@@ -16,33 +16,42 @@ export interface ApifyReelResult {
   ownerFullName?: string
 }
 
-export async function scrapeInstagramReels(
+export async function startInstagramScrapeRun(
   apiToken: string,
   usernames: string[],
-  postsPerProfile = 20
-): Promise<ApifyReelResult[]> {
+  postsPerProfile = 10
+): Promise<{ runId: string; datasetId: string }> {
   const directUrls = usernames.map((u) => `https://www.instagram.com/${u}/`)
 
-  const runRes = await fetch(
-    `${APIFY_BASE}/acts/${REEL_ACTOR}/run-sync-get-dataset-items?token=${apiToken}&timeout=55&memory=256`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        directUrls,
-        resultsType: 'posts',
-        resultsLimit: postsPerProfile,
-        addParentData: false,
-      }),
-      signal: AbortSignal.timeout(58_000),
-    }
-  )
+  const res = await fetch(`${APIFY_BASE}/acts/${REEL_ACTOR}/runs?token=${apiToken}&memory=512`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      directUrls,
+      resultsType: 'posts',
+      resultsLimit: postsPerProfile,
+      addParentData: false,
+    }),
+  })
 
-  if (!runRes.ok) {
-    const err = await runRes.json().catch(() => ({}))
-    throw new Error(err.error?.message || `Apify ${runRes.status}: actor no encontrado o token inválido`)
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.error?.message || `Apify ${res.status}: no se pudo iniciar el scrape`)
   }
 
-  const items: ApifyReelResult[] = await runRes.json()
-  return items
+  const data = await res.json()
+  return { runId: data.data.id, datasetId: data.data.defaultDatasetId }
+}
+
+export async function getRunStatus(apiToken: string, runId: string): Promise<{ status: string; datasetId: string }> {
+  const res = await fetch(`${APIFY_BASE}/actor-runs/${runId}?token=${apiToken}`)
+  if (!res.ok) throw new Error(`Apify status error: ${res.status}`)
+  const data = await res.json()
+  return { status: data.data.status, datasetId: data.data.defaultDatasetId }
+}
+
+export async function getDatasetItems(apiToken: string, datasetId: string): Promise<ApifyReelResult[]> {
+  const res = await fetch(`${APIFY_BASE}/datasets/${datasetId}/items?token=${apiToken}&clean=true`)
+  if (!res.ok) throw new Error(`Apify dataset error: ${res.status}`)
+  return res.json()
 }

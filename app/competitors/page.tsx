@@ -40,6 +40,8 @@ export default function CompetitorsPage() {
   const [loading, setLoading] = useState(true)
   const [postsLoading, setPostsLoading] = useState(false)
   const [scraping, setScraping] = useState(false)
+  const [scrapeRunId, setScrapeRunId] = useState<string | null>(null)
+  const [scrapeDatasetId, setScrapeDatasetId] = useState<string | null>(null)
   const [analyzing, setAnalyzing] = useState(false)
   const [actionResult, setActionResult] = useState<string | null>(null)
   const [showAdd, setShowAdd] = useState(false)
@@ -47,6 +49,33 @@ export default function CompetitorsPage() {
   const [filterGap, setFilterGap] = useState(false)
 
   useEffect(() => { fetchCompetitors() }, [])
+
+  // Polling del run de Apify mientras está en progreso
+  useEffect(() => {
+    if (!scrapeRunId || !scrapeDatasetId) return
+    const interval = setInterval(async () => {
+      const res = await fetch(`/api/competitors/scrape?run_id=${scrapeRunId}&dataset_id=${scrapeDatasetId}`)
+      const data = await res.json()
+      if (data.status === 'done') {
+        clearInterval(interval)
+        setScraping(false)
+        setScrapeRunId(null)
+        setScrapeDatasetId(null)
+        setActionResult(`✓ ${data.message}`)
+        fetchCompetitors()
+        if (selected) fetchPosts(selected.id)
+      } else if (data.status === 'failed') {
+        clearInterval(interval)
+        setScraping(false)
+        setScrapeRunId(null)
+        setScrapeDatasetId(null)
+        setActionResult(`Error: ${data.message}`)
+      } else {
+        setActionResult(`⟳ ${data.message}`)
+      }
+    }, 15000)
+    return () => clearInterval(interval)
+  }, [scrapeRunId, scrapeDatasetId, selected])
 
   async function fetchCompetitors() {
     setLoading(true)
@@ -95,10 +124,6 @@ export default function CompetitorsPage() {
   }
 
   async function handleScrape(competitorId?: string) {
-    if (!process.env.NEXT_PUBLIC_HAS_APIFY && competitors.length === 0) {
-      setActionResult('Configurá APIFY_API_TOKEN en Vercel primero')
-      return
-    }
     setScraping(true)
     setActionResult(null)
     const body = competitorId ? { competitor_id: competitorId } : {}
@@ -108,12 +133,12 @@ export default function CompetitorsPage() {
       body: JSON.stringify(body),
     })
     const data = await res.json()
-    setScraping(false)
-    if (res.ok) {
-      setActionResult(`✓ ${data.message}`)
-      if (selected) fetchPosts(selected.id)
-      fetchCompetitors()
+    if (res.ok && data.status === 'started') {
+      setScrapeRunId(data.run_id)
+      setScrapeDatasetId(data.dataset_id)
+      setActionResult(`⟳ ${data.message}`)
     } else {
+      setScraping(false)
       setActionResult(`Error: ${data.error}`)
     }
   }
