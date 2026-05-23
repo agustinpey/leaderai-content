@@ -1,5 +1,5 @@
 const APIFY_BASE = 'https://api.apify.com/v2'
-const REEL_ACTOR = 'apify~instagram-reel-scraper'
+const REEL_ACTOR = 'apify~instagram-scraper'
 
 export interface ApifyReelResult {
   id: string
@@ -21,23 +21,26 @@ export async function scrapeInstagramReels(
   usernames: string[],
   postsPerProfile = 20
 ): Promise<ApifyReelResult[]> {
-  const directUrls = usernames.map((u) => ({
-    url: `https://www.instagram.com/${u}/reels/`,
-  }))
+  const directUrls = usernames.map((u) => `https://www.instagram.com/${u}/`)
 
   const runRes = await fetch(
     `${APIFY_BASE}/acts/${REEL_ACTOR}/run-sync-get-dataset-items?token=${apiToken}&timeout=55&memory=256`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ directUrls, resultsLimit: postsPerProfile }),
+      body: JSON.stringify({
+        directUrls,
+        resultsType: 'posts',
+        resultsLimit: postsPerProfile,
+        addParentData: false,
+      }),
       signal: AbortSignal.timeout(58_000),
     }
   )
 
   if (!runRes.ok) {
     const err = await runRes.json().catch(() => ({}))
-    throw new Error(err.error?.message || `Apify error: ${runRes.status}`)
+    throw new Error(err.error?.message || `Apify ${runRes.status}: actor no encontrado o token inválido`)
   }
 
   const items: ApifyReelResult[] = await runRes.json()

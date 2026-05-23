@@ -64,9 +64,16 @@ export async function POST(req: NextRequest) {
         .from('competitors')
         .update({ last_scraped_at: new Date().toISOString() })
         .eq('id', competitor.id)
-    } catch {
+    } catch (err) {
       totalErrors++
+      console.error(`Scrape error for @${competitor.username}:`, err instanceof Error ? err.message : err)
     }
+  }
+
+  if (totalInserted === 0 && totalErrors > 0) {
+    return Response.json({
+      error: `Apify no pudo scrapear ninguna cuenta (${totalErrors} errores). Verificá el token en Vercel y que el plan de Apify tenga créditos.`,
+    }, { status: 500 })
   }
 
   return Response.json({
