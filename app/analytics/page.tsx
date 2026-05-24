@@ -45,8 +45,11 @@ export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true)
   const [days, setDays] = useState(30)
   const [showMetricsModal, setShowMetricsModal] = useState(false)
-  const [selectedInsight, setSelectedInsight] = useState<WeeklyInsight | null>(null)
+  const [expandedInsights, setExpandedInsights] = useState<Set<string>>(new Set())
   const [igConnected, setIgConnected] = useState(false)
+  const [feedback, setFeedback] = useState<any | null>(null)
+  const [feedbackLoading, setFeedbackLoading] = useState(false)
+  const [feedbackError, setFeedbackError] = useState<string | null>(null)
   const [syncing, setSyncing] = useState(false)
   const [syncResult, setSyncResult] = useState<string | null>(null)
   const [metricsForm, setMetricsForm] = useState({
@@ -105,6 +108,28 @@ export default function AnalyticsPage() {
     setShowMetricsModal(false)
     setMetricsForm({ post_id: '', likes: '', saves: '', reach: '', comments: '', shares: '', plays: '', retention_rate: '' })
     fetchData()
+  }
+
+  function toggleInsight(id: string) {
+    setExpandedInsights((prev) => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  async function handleGenerateFeedback() {
+    setFeedbackLoading(true)
+    setFeedbackError(null)
+    try {
+      const res = await fetch('/api/analytics/feedback', { method: 'POST' })
+      const data = await res.json()
+      if (res.ok) setFeedback(data)
+      else setFeedbackError(data.error || 'Error al generar feedback')
+    } catch {
+      setFeedbackError('Error al conectar con el servidor')
+    }
+    setFeedbackLoading(false)
   }
 
   async function handleInstagramSync() {
@@ -271,6 +296,105 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
+      {/* Feedback IA */}
+      <div className="bg-white border border-zinc-200 rounded-xl p-5 mb-5">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-sm font-medium text-zinc-900">Feedback IA</h2>
+            <p className="text-xs text-zinc-400 mt-0.5">Análisis de tu performance vs. referentes</p>
+          </div>
+          <button
+            onClick={handleGenerateFeedback}
+            disabled={feedbackLoading}
+            className="text-xs bg-zinc-900 hover:bg-zinc-800 disabled:bg-zinc-300 text-white disabled:text-zinc-500 rounded-lg px-3 py-1.5 transition-colors"
+          >
+            {feedbackLoading ? '✦ Analizando...' : '✦ Generar análisis'}
+          </button>
+        </div>
+
+        {feedbackError && (
+          <p className="text-xs text-red-500 mb-3">{feedbackError}</p>
+        )}
+
+        {!feedback && !feedbackLoading && (
+          <p className="text-xs text-zinc-400 text-center py-6">
+            Hacé click en "Generar análisis" para recibir feedback basado en tus métricas y las de tus referentes
+          </p>
+        )}
+
+        {feedbackLoading && (
+          <div className="flex items-center justify-center py-8 gap-2">
+            <div className="w-4 h-4 border-2 border-zinc-200 border-t-zinc-600 rounded-full animate-spin" />
+            <p className="text-xs text-zinc-400">Comparando con referentes...</p>
+          </div>
+        )}
+
+        {feedback && (
+          <div className="space-y-4">
+            <div className="bg-zinc-50 border border-zinc-200 rounded-lg px-4 py-3">
+              <p className="text-xs text-zinc-500 mb-1">Estado actual</p>
+              <p className="text-sm text-zinc-800">{feedback.estado_actual}</p>
+            </div>
+
+            {feedback.puntos_fuertes?.length > 0 && (
+              <div>
+                <p className="text-xs font-medium text-zinc-500 mb-2">Puntos fuertes</p>
+                <div className="space-y-1.5">
+                  {feedback.puntos_fuertes.map((p: string, i: number) => (
+                    <div key={i} className="flex items-start gap-2 text-xs text-zinc-600">
+                      <span className="text-emerald-500 mt-0.5 shrink-0">✓</span>
+                      {p}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {feedback.oportunidades?.length > 0 && (
+              <div>
+                <p className="text-xs font-medium text-zinc-500 mb-2">Oportunidades</p>
+                <div className="space-y-3">
+                  {feedback.oportunidades.map((op: any, i: number) => (
+                    <div key={i} className="border-l-2 border-blue-200 pl-3">
+                      <p className="text-sm font-medium text-zinc-800">{op.titulo}</p>
+                      <p className="text-xs text-zinc-500 mt-0.5">{op.descripcion}</p>
+                      <p className="text-xs text-blue-600 mt-1">→ {op.accion}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {feedback.temas_gap?.length > 0 && (
+              <div>
+                <p className="text-xs font-medium text-zinc-500 mb-2">Temas gap (cubiertos por referentes, no por vos)</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {feedback.temas_gap.map((t: string, i: number) => (
+                    <span key={i} className="text-xs bg-amber-50 border border-amber-200 text-amber-700 rounded-full px-2 py-0.5">
+                      {t}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {feedback.hook_que_mas_funciona_en_referentes && (
+              <div className="bg-zinc-50 border border-zinc-200 rounded-lg px-4 py-3">
+                <p className="text-xs text-zinc-500 mb-1">Hook que más funciona en referentes</p>
+                <p className="text-sm text-zinc-700">{feedback.hook_que_mas_funciona_en_referentes}</p>
+              </div>
+            )}
+
+            {feedback.proxima_semana && (
+              <div className="bg-zinc-900 rounded-lg px-4 py-3">
+                <p className="text-xs text-zinc-400 mb-1">Prioridad esta semana</p>
+                <p className="text-sm text-white">{feedback.proxima_semana}</p>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
       {/* Insights semanales */}
       <div className="bg-white border border-zinc-200 rounded-xl p-5">
         <div className="flex items-center justify-between mb-4">
@@ -284,51 +408,56 @@ export default function AnalyticsPage() {
             <p className="text-xs text-zinc-300">El primer análisis se genera automáticamente el próximo lunes</p>
           </div>
         ) : (
-          <div className="space-y-3">
-            {insights.map((insight) => (
-              <div
-                key={insight.id}
-                onClick={() => setSelectedInsight(selectedInsight?.id === insight.id ? null : insight)}
-                className="border border-zinc-200 hover:border-zinc-300 rounded-xl p-4 cursor-pointer transition-colors"
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-sm font-medium text-zinc-800">
-                    Semana del {format(parseISO(insight.week_start), 'd MMM', { locale: es })} al{' '}
-                    {format(parseISO(insight.week_end), 'd MMM yyyy', { locale: es })}
-                  </p>
-                  <div className="flex gap-4 text-xs text-zinc-400">
-                    <span>{insight.total_posts} posts</span>
-                    <span>{insight.avg_saves} avg saves</span>
-                    <span>{insight.avg_reach?.toLocaleString()} avg reach</span>
-                  </div>
-                </div>
-
-                {selectedInsight?.id === insight.id && (
-                  <div className="mt-3 pt-3 border-t border-zinc-200 space-y-3">
-                    {insight.top_format && (
-                      <p className="text-xs text-zinc-400">
-                        Formato estrella: <span className="text-zinc-700">{insight.top_format}</span>
-                      </p>
-                    )}
-                    {insight.recommendations?.map((rec: any, i: number) => (
-                      <div key={i} className="border-l-2 border-zinc-200 pl-3">
-                        <p className="text-sm text-zinc-800 font-medium">{rec.titulo}</p>
-                        <p className="text-xs text-zinc-500 mt-0.5">{rec.descripcion}</p>
-                        <p className="text-xs text-zinc-400 mt-1">→ {rec.accion}</p>
+          <div className="space-y-2">
+            {insights.map((insight) => {
+              const isOpen = expandedInsights.has(insight.id)
+              return (
+                <div key={insight.id} className="border border-zinc-200 rounded-xl overflow-hidden">
+                  <button
+                    onClick={() => toggleInsight(insight.id)}
+                    className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-zinc-50 transition-colors text-left"
+                  >
+                    <p className="text-sm font-medium text-zinc-800">
+                      Semana del {format(parseISO(insight.week_start), 'd MMM', { locale: es })} al{' '}
+                      {format(parseISO(insight.week_end), 'd MMM yyyy', { locale: es })}
+                    </p>
+                    <div className="flex items-center gap-4">
+                      <div className="flex gap-4 text-xs text-zinc-400">
+                        <span>{insight.total_posts} posts</span>
+                        <span>{insight.avg_saves} avg saves</span>
+                        <span>{insight.avg_reach?.toLocaleString()} avg reach</span>
                       </div>
-                    ))}
-                    {insight.raw_analysis && (
-                      <details className="mt-2">
-                        <summary className="text-xs text-zinc-400 cursor-pointer hover:text-zinc-600">Ver análisis completo</summary>
-                        <div className="mt-2 text-xs text-zinc-500 whitespace-pre-wrap leading-relaxed bg-zinc-50 border border-zinc-200 rounded-lg p-3 max-h-60 overflow-y-auto">
-                          {insight.raw_analysis}
+                      <span className="text-zinc-400 text-xs">{isOpen ? '▾' : '▸'}</span>
+                    </div>
+                  </button>
+
+                  {isOpen && (
+                    <div className="px-4 pb-4 pt-1 border-t border-zinc-100 space-y-3">
+                      {insight.top_format && (
+                        <p className="text-xs text-zinc-400">
+                          Formato estrella: <span className="text-zinc-700">{insight.top_format}</span>
+                        </p>
+                      )}
+                      {insight.recommendations?.map((rec: any, i: number) => (
+                        <div key={i} className="border-l-2 border-zinc-200 pl-3">
+                          <p className="text-sm text-zinc-800 font-medium">{rec.titulo}</p>
+                          <p className="text-xs text-zinc-500 mt-0.5">{rec.descripcion}</p>
+                          <p className="text-xs text-zinc-400 mt-1">→ {rec.accion}</p>
                         </div>
-                      </details>
-                    )}
-                  </div>
-                )}
-              </div>
-            ))}
+                      ))}
+                      {insight.raw_analysis && (
+                        <details className="mt-2">
+                          <summary className="text-xs text-zinc-400 cursor-pointer hover:text-zinc-600">Ver análisis completo</summary>
+                          <div className="mt-2 text-xs text-zinc-500 whitespace-pre-wrap leading-relaxed bg-zinc-50 border border-zinc-200 rounded-lg p-3 max-h-60 overflow-y-auto">
+                            {insight.raw_analysis}
+                          </div>
+                        </details>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
           </div>
         )}
       </div>

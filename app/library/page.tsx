@@ -69,6 +69,10 @@ export default function LibraryPage() {
   const [scriptsLoading, setScriptsLoading] = useState(false)
   const [selectedScript, setSelectedScript] = useState<ScriptRecord | null>(null)
 
+  // Caption editing
+  const [editingCaption, setEditingCaption] = useState<string | null>(null)
+  const [savingCaption, setSavingCaption] = useState(false)
+
   async function fetchPosts() {
     setLoading(true)
     let url = '/api/posts'
@@ -144,6 +148,20 @@ export default function LibraryPage() {
     await fetch(`/api/scripts?id=${id}`, { method: 'DELETE' })
     setSelectedScript(null)
     fetchScripts()
+  }
+
+  async function handleSaveCaption() {
+    if (!selected || editingCaption === null) return
+    setSavingCaption(true)
+    await fetch('/api/posts', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: selected.id, caption: editingCaption }),
+    })
+    setSelected({ ...selected, caption: editingCaption })
+    setSavingCaption(false)
+    setEditingCaption(null)
+    fetchPosts()
   }
 
   return (
@@ -238,6 +256,13 @@ export default function LibraryPage() {
                 <span className={`text-xs px-2 py-0.5 rounded-full border shrink-0 ${SCRIPT_STATUS_STYLE[s.status] || 'bg-zinc-100 text-zinc-400 border-zinc-200'}`}>
                   {s.status}
                 </span>
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleScriptDelete(s.id) }}
+                  className="shrink-0 w-7 h-7 flex items-center justify-center text-zinc-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                  title="Eliminar"
+                >
+                  🗑
+                </button>
               </div>
             ))}
           </div>
@@ -291,6 +316,13 @@ export default function LibraryPage() {
                     <div>{(post as any).metrics.reach} reach</div>
                   </div>
                 )}
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleDelete(post.id) }}
+                  className="shrink-0 w-7 h-7 flex items-center justify-center text-zinc-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                  title="Eliminar"
+                >
+                  🗑
+                </button>
               </div>
             ))}
           </div>
@@ -401,12 +433,49 @@ export default function LibraryPage() {
           )}
 
           {/* Caption */}
-          {selected.caption && (
+          {(selected.caption || editingCaption !== null) && (
             <div>
-              <label className="text-xs text-zinc-500 mb-1.5 block">Caption</label>
-              <div className="text-xs bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-3 text-zinc-600 whitespace-pre-wrap leading-relaxed max-h-40 overflow-y-auto">
-                {selected.caption}
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs text-zinc-500">Caption</label>
+                {editingCaption === null ? (
+                  <button
+                    onClick={() => setEditingCaption(selected.caption || '')}
+                    className="text-xs text-zinc-400 hover:text-zinc-600 transition-colors"
+                  >
+                    Editar
+                  </button>
+                ) : (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setEditingCaption(null)}
+                      className="text-xs text-zinc-400 hover:text-zinc-600"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      onClick={handleSaveCaption}
+                      disabled={savingCaption}
+                      className="text-xs text-blue-600 hover:text-blue-500 disabled:opacity-50 font-medium"
+                    >
+                      {savingCaption ? 'Guardando...' : 'Guardar'}
+                    </button>
+                  </div>
+                )}
               </div>
+              {editingCaption !== null ? (
+                <textarea
+                  value={editingCaption}
+                  onChange={(e) => setEditingCaption(e.target.value)}
+                  rows={6}
+                  className="w-full text-xs bg-white border border-zinc-300 rounded-lg px-3 py-3 text-zinc-700 whitespace-pre-wrap leading-relaxed resize-y outline-none focus:border-zinc-400"
+                />
+              ) : (
+                <div className="text-xs bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-3 text-zinc-600 whitespace-pre-wrap leading-relaxed max-h-40 overflow-y-auto cursor-text"
+                  onClick={() => setEditingCaption(selected.caption || '')}
+                >
+                  {selected.caption}
+                </div>
+              )}
             </div>
           )}
 
