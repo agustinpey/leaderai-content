@@ -15,7 +15,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const body = await req.json()
-  const { title, pain_point, content_angle, format_suggestion, topic_tag, hooks, source } = body
+  const { title, pain_point, content_angle, format_suggestion, topic_tag, hooks, source, full_brief } = body
   if (!title) return Response.json({ error: 'title requerido' }, { status: 400 })
 
   const { data, error } = await supabaseAdmin
@@ -30,6 +30,7 @@ export async function POST(req: NextRequest) {
       source: source || 'manual',
       status: 'nueva',
       estimated_performance: 'medio',
+      full_brief: full_brief || null,
     })
     .select()
     .single()

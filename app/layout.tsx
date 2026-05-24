@@ -5,6 +5,9 @@ import Sidebar from '@/components/Sidebar'
 export const metadata: Metadata = {
   title: 'LeaderAI Content',
   description: 'Workspace de contenido para Agustín / LeaderAI',
+  icons: {
+    icon: [{ url: '/favicon.svg', type: 'image/svg+xml' }],
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

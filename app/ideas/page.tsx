@@ -77,14 +77,14 @@ export default function IdeasPage() {
       return
     }
     setExpandedId(id)
-    if (!briefs[id]) {
-      setBriefLoading(id)
-      const res = await fetch(`/api/intelligence/brief/${id}`, { method: 'POST' })
-      const data = await res.json()
-      if (res.ok) setBriefs((prev) => ({ ...prev, [id]: data.brief }))
-      setBriefLoading(null)
-      fetchIdeas()
-    }
+    const idea = ideas.find((i) => i.id === id)
+    if (idea?.full_brief || briefs[id]) return
+    setBriefLoading(id)
+    const res = await fetch(`/api/intelligence/brief/${id}`, { method: 'POST' })
+    const data = await res.json()
+    if (res.ok) setBriefs((prev) => ({ ...prev, [id]: data.brief }))
+    setBriefLoading(null)
+    fetchIdeas()
   }
 
   async function handleSendToChat(ideaId: string) {
@@ -98,6 +98,27 @@ export default function IdeasPage() {
       const encoded = encodeURIComponent(data.chat_prompt)
       router.push(`/chat?idea_prompt=${encoded}`)
     }
+  }
+
+  async function handleSaveToLibrary(idea: ContentIdea) {
+    if (!idea.full_brief) return
+    await fetch('/api/scripts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title: idea.title,
+        content: idea.full_brief,
+        format: idea.format_suggestion,
+        status: 'pendiente',
+        source_idea_id: idea.id,
+      }),
+    })
+    await fetch('/api/content-ideas', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: idea.id, status: 'usada' }),
+    })
+    setIdeas((prev) => prev.map((i) => (i.id === idea.id ? { ...i, status: 'usada' } : i)))
   }
 
   async function handleStatusChange(id: string, status: ContentIdea['status']) {
@@ -245,6 +266,7 @@ export default function IdeasPage() {
                 onExpand={handleExpand}
                 onSendToChat={handleSendToChat}
                 onStatusChange={handleStatusChange}
+                onSaveToLibrary={handleSaveToLibrary}
                 expanded={expandedId === idea.id}
                 brief={briefs[idea.id]}
                 briefLoading={briefLoading === idea.id}

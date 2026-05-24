@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <rect width="64" height="64" rx="12" fill="#0A0A0F"/>
+  <rect width="64" height="64" rx="12" fill="url(#bg-grad)" opacity="0.6"/>
+  <defs>
+    <linearGradient id="bg-grad" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#1a1a3e"/>
+      <stop offset="100%" stop-color="#0A0A0F"/>
+    </linearGradient>
+    <linearGradient id="l-grad" x1="14" y1="14" x2="14" y2="46" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#a0a0cc"/>
+    </linearGradient>
+    <linearGradient id="accent-grad" x1="30" y1="30" x2="52" y2="52" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#6C63FF"/>
+      <stop offset="100%" stop-color="#3D3ADB"/>
+    </linearGradient>
+  </defs>
+  <!-- L stem -->
+  <rect x="14" y="14" width="8" height="32" rx="2" fill="url(#l-grad)"/>
+  <!-- L base -->
+  <rect x="14" y="38" width="22" height="8" rx="2" fill="url(#l-grad)"/>
+  <!-- AI accent — small glowing dot cluster top-right -->
+  <circle cx="46" cy="20" r="6" fill="url(#accent-grad)" opacity="0.95"/>
+  <circle cx="46" cy="20" r="3" fill="#9d99ff" opacity="0.7"/>
+  <!-- tiny satellites -->
+  <circle cx="39" cy="18" r="2" fill="#6C63FF" opacity="0.6"/>
+  <circle cx="46" cy="13" r="1.5" fill="#6C63FF" opacity="0.5"/>
+  <circle cx="52" cy="26" r="1.5" fill="#6C63FF" opacity="0.5"/>
+  <!-- connector lines -->
+  <line x1="46" y1="20" x2="39" y2="18" stroke="#6C63FF" stroke-width="0.8" opacity="0.5"/>
+  <line x1="46" y1="20" x2="46" y2="13" stroke="#6C63FF" stroke-width="0.8" opacity="0.5"/>
+  <line x1="46" y1="20" x2="52" y2="26" stroke="#6C63FF" stroke-width="0.8" opacity="0.5"/>
+</svg>

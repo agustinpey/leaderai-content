@@ -1,3 +1,5 @@
+import { useState } from 'react'
+
 interface ContentIdea {
   id: string
   title: string
@@ -39,6 +41,7 @@ interface Props {
   onExpand: (id: string) => void
   onSendToChat: (id: string) => void
   onStatusChange: (id: string, status: ContentIdea['status']) => void
+  onSaveToLibrary: (idea: ContentIdea) => void
   expanded?: boolean
   brief?: string
   briefLoading?: boolean
@@ -49,10 +52,22 @@ export default function IdeaCard({
   onExpand,
   onSendToChat,
   onStatusChange,
+  onSaveToLibrary,
   expanded,
   brief,
   briefLoading,
 }: Props) {
+  const [saved, setSaved] = useState(false)
+
+  const hasScript = !!idea.full_brief
+  const scriptContent = idea.full_brief || brief
+
+  async function handleSaveToLibrary() {
+    await onSaveToLibrary(idea)
+    setSaved(true)
+    setTimeout(() => setSaved(false), 3000)
+  }
+
   return (
     <div className={`border rounded-xl bg-white transition-all ${expanded ? 'border-zinc-300 shadow-sm' : 'border-zinc-200 hover:border-zinc-300'}`}>
       <div className="p-4">
@@ -75,6 +90,11 @@ export default function IdeaCard({
           <span className={`text-xs rounded-full px-2 py-0.5 ${STATUS_STYLE[idea.status]}`}>
             {idea.status}
           </span>
+          {hasScript && (
+            <span className="text-xs rounded-full px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-100">
+              ✓ guión guardado
+            </span>
+          )}
           {idea.topic_tag && (
             <span className="text-xs rounded-full px-2 py-0.5 bg-zinc-50 text-zinc-500 border border-zinc-200">
               {idea.topic_tag.replace(/_/g, ' ')}
@@ -84,22 +104,42 @@ export default function IdeaCard({
 
         {/* Actions */}
         <div className="flex gap-2 mt-3">
-          <button
-            onClick={() => onExpand(idea.id)}
-            className="flex-1 text-xs border border-zinc-200 text-zinc-600 rounded-lg py-1.5 hover:bg-zinc-50 transition-colors"
-          >
-            {expanded ? '▲ Cerrar' : '▼ Ver brief'}
-          </button>
-          <button
-            onClick={() => onSendToChat(idea.id)}
-            className="flex-1 text-xs bg-zinc-900 hover:bg-zinc-700 text-white rounded-lg py-1.5 transition-colors"
-          >
-            ✦ Generar guión
-          </button>
+          {hasScript ? (
+            <>
+              <button
+                onClick={() => onExpand(idea.id)}
+                className="flex-1 text-xs border border-zinc-200 text-zinc-600 rounded-lg py-1.5 hover:bg-zinc-50 transition-colors"
+              >
+                {expanded ? '▲ Cerrar' : '▼ Ver guión'}
+              </button>
+              <button
+                onClick={handleSaveToLibrary}
+                disabled={saved}
+                className="flex-1 text-xs bg-zinc-900 hover:bg-zinc-700 disabled:bg-green-100 disabled:text-green-700 text-white rounded-lg py-1.5 transition-colors"
+              >
+                {saved ? '✓ Guardado' : '↓ Pasar a Biblioteca'}
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={() => onExpand(idea.id)}
+                className="flex-1 text-xs border border-zinc-200 text-zinc-600 rounded-lg py-1.5 hover:bg-zinc-50 transition-colors"
+              >
+                {expanded ? '▲ Cerrar' : '▼ Ver brief'}
+              </button>
+              <button
+                onClick={() => onSendToChat(idea.id)}
+                className="flex-1 text-xs bg-zinc-900 hover:bg-zinc-700 text-white rounded-lg py-1.5 transition-colors"
+              >
+                ✦ Generar guión
+              </button>
+            </>
+          )}
         </div>
       </div>
 
-      {/* Expanded brief */}
+      {/* Expanded content */}
       {expanded && (
         <div className="border-t border-zinc-100 p-4">
           {briefLoading && (
@@ -108,11 +148,11 @@ export default function IdeaCard({
               <span className="text-xs text-zinc-400">Generando brief...</span>
             </div>
           )}
-          {brief && !briefLoading && (
-            <div className="space-y-1">
-              {brief.split('\n').map((line, i) => {
-                if (line.startsWith('## ')) {
-                  return <h4 key={i} className="text-xs font-semibold text-zinc-900 mt-3 mb-1">{line.slice(3)}</h4>
+          {scriptContent && !briefLoading && (
+            <div className="space-y-1 max-h-96 overflow-y-auto">
+              {scriptContent.split('\n').map((line, i) => {
+                if (line.startsWith('## ') || line.startsWith('# ')) {
+                  return <h4 key={i} className="text-xs font-semibold text-zinc-900 mt-3 mb-1">{line.replace(/^#+\s*/, '')}</h4>
                 }
                 if (line.startsWith('**') && line.endsWith('**')) {
                   return <p key={i} className="text-xs font-medium text-zinc-700">{line.replace(/\*\*/g, '')}</p>

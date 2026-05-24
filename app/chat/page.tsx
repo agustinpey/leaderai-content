@@ -175,6 +175,7 @@ function ChatContent() {
         pain_point: ideaModal.pain_point,
         content_angle: ideaModal.content.slice(0, 500),
         format_suggestion: ideaModal.format,
+        full_brief: ideaModal.content,
         source: 'manual',
       }),
     })
