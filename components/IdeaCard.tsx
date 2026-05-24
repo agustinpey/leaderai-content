@@ -12,6 +12,7 @@ interface ContentIdea {
   source: string
   status: 'nueva' | 'en_proceso' | 'usada' | 'descartada'
   full_brief: string | null
+  generation_batch_id: string | null
   created_at: string
 }
 
