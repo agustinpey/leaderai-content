@@ -13,6 +13,31 @@ export async function GET() {
   return Response.json({ ideas: data || [] })
 }
 
+export async function POST(req: NextRequest) {
+  const body = await req.json()
+  const { title, pain_point, content_angle, format_suggestion, topic_tag, hooks, source } = body
+  if (!title) return Response.json({ error: 'title requerido' }, { status: 400 })
+
+  const { data, error } = await supabaseAdmin
+    .from('content_ideas')
+    .insert({
+      title,
+      pain_point: pain_point || '',
+      content_angle: content_angle || '',
+      format_suggestion: format_suggestion || 'reel',
+      topic_tag: topic_tag || null,
+      hooks: hooks || [],
+      source: source || 'manual',
+      status: 'nueva',
+      estimated_performance: 'medio',
+    })
+    .select()
+    .single()
+
+  if (error) return Response.json({ error: error.message }, { status: 500 })
+  return Response.json({ idea: data }, { status: 201 })
+}
+
 export async function PATCH(req: NextRequest) {
   const { id, status, converted_to_post_id } = await req.json()
   if (!id) return Response.json({ error: 'id requerido' }, { status: 400 })

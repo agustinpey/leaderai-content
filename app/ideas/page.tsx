@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import IdeaCard from '@/components/IdeaCard'
 
@@ -41,8 +41,6 @@ export default function IdeasPage() {
   const [ideas, setIdeas] = useState<ContentIdea[]>([])
   const [lastRun, setLastRun] = useState<LastRun | null>(null)
   const [loading, setLoading] = useState(true)
-  const [generating, setGenerating] = useState(false)
-  const [generateResult, setGenerateResult] = useState<string | null>(null)
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [briefs, setBriefs] = useState<Record<string, string>>({})
   const [briefLoading, setBriefLoading] = useState<string | null>(null)
@@ -69,20 +67,9 @@ export default function IdeasPage() {
     }
   }
 
-  async function handleGenerate() {
-    setGenerating(true)
-    setGenerateResult(null)
-    const res = await fetch('/api/intelligence/generate', { method: 'POST' })
-    const data = await res.json()
-    setGenerating(false)
-    if (res.ok) {
-      setGenerateResult(`✓ ${data.message}`)
-      fetchIdeas()
-      fetchLastRun()
-    } else {
-      setGenerateResult(`Error: ${data.error}`)
-    }
-  }
+  const handleGenerate = useCallback(() => {
+    router.push('/chat?idea_prompt=' + encodeURIComponent('Generame 8 ideas de contenido para esta semana para mi marca personal LeaderAI. Para cada idea incluí: título, por qué le duele a mi audiencia, ángulo diferente, formato sugerido y 3 hooks listos para usar.'))
+  }, [router])
 
   async function handleExpand(id: string) {
     if (expandedId === id) {
@@ -207,16 +194,11 @@ export default function IdeasPage() {
         <div className="p-3 border-t border-zinc-100">
           <button
             onClick={handleGenerate}
-            disabled={generating}
-            className="w-full text-xs bg-zinc-900 hover:bg-zinc-700 disabled:bg-zinc-200 text-white disabled:text-zinc-400 rounded-xl py-3 font-medium transition-colors"
+            className="w-full text-xs bg-zinc-900 hover:bg-zinc-700 text-white rounded-xl py-3 font-medium transition-colors"
           >
-            {generating ? '✦ Generando...' : '✦ Generar nuevas ideas'}
+            ✦ Generar ideas con Claude
           </button>
-          {generateResult && (
-            <p className={`text-xs mt-2 text-center ${generateResult.startsWith('✓') ? 'text-green-600' : 'text-red-600'}`}>
-              {generateResult}
-            </p>
-          )}
+          <p className="text-xs text-zinc-400 mt-2 text-center">Te lleva al Chat con el prompt listo</p>
         </div>
       </div>
 
@@ -246,10 +228,9 @@ export default function IdeasPage() {
             {ideas.length === 0 && (
               <button
                 onClick={handleGenerate}
-                disabled={generating}
-                className="text-sm bg-zinc-900 text-white rounded-xl px-5 py-2.5 hover:bg-zinc-700 disabled:opacity-50 transition-colors"
+                className="text-sm bg-zinc-900 text-white rounded-xl px-5 py-2.5 hover:bg-zinc-700 transition-colors"
               >
-                {generating ? '✦ Generando...' : '✦ Generar ideas ahora'}
+                ✦ Generar ideas ahora
               </button>
             )}
           </div>
