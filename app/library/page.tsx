@@ -73,6 +73,9 @@ export default function LibraryPage() {
   const [editingCaption, setEditingCaption] = useState<string | null>(null)
   const [savingCaption, setSavingCaption] = useState(false)
 
+  // Script expand modal
+  const [scriptModal, setScriptModal] = useState<{ title: string; content: string } | null>(null)
+
   async function fetchPosts() {
     setLoading(true)
     let url = '/api/posts'
@@ -368,15 +371,29 @@ export default function LibraryPage() {
 
           {/* Contenido del guión */}
           <div>
-            <label className="text-xs text-zinc-500 mb-2 block">Guión completo</label>
-            <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-4 space-y-1">
-              {selectedScript.content.split('\n').map((line, i) => {
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-xs text-zinc-500">Guión completo</label>
+              <button
+                onClick={() => setScriptModal({ title: selectedScript.title, content: selectedScript.content })}
+                className="text-xs text-zinc-400 hover:text-zinc-700 transition-colors"
+              >
+                ⤢ Expandir
+              </button>
+            </div>
+            <div
+              onClick={() => setScriptModal({ title: selectedScript.title, content: selectedScript.content })}
+              className="bg-zinc-50 border border-zinc-200 rounded-xl p-4 space-y-1 max-h-64 overflow-hidden cursor-pointer hover:border-zinc-300 relative group transition-colors"
+            >
+              {selectedScript.content.split('\n').slice(0, 12).map((line, i) => {
                 if (line.startsWith('## ') || line.startsWith('**')) {
                   return <p key={i} className="text-xs font-semibold text-zinc-900 mt-2">{line.replace(/^##\s+/, '').replace(/\*\*/g, '')}</p>
                 }
                 if (line.trim() === '') return <div key={i} className="h-1" />
                 return <p key={i} className="text-xs text-zinc-600 leading-relaxed">{line}</p>
               })}
+              <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-zinc-50 to-transparent rounded-b-xl flex items-end justify-center pb-1.5">
+                <span className="text-xs text-zinc-400 group-hover:text-zinc-600 transition-colors">Ver completo →</span>
+              </div>
             </div>
           </div>
         </div>
@@ -425,9 +442,23 @@ export default function LibraryPage() {
           {/* Script */}
           {selected.script && (
             <div>
-              <label className="text-xs text-zinc-500 mb-1.5 block">Guión</label>
-              <div className="text-xs bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-3 text-zinc-600 whitespace-pre-wrap leading-relaxed max-h-60 overflow-y-auto">
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs text-zinc-500">Guión</label>
+                <button
+                  onClick={() => setScriptModal({ title: selected.title, content: selected.script! })}
+                  className="text-xs text-zinc-400 hover:text-zinc-700 transition-colors"
+                >
+                  ⤢ Expandir
+                </button>
+              </div>
+              <div
+                onClick={() => setScriptModal({ title: selected.title, content: selected.script! })}
+                className="text-xs bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-3 text-zinc-600 whitespace-pre-wrap leading-relaxed max-h-40 overflow-hidden cursor-pointer hover:border-zinc-300 relative group transition-colors"
+              >
                 {selected.script}
+                <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-zinc-50 to-transparent rounded-b-lg flex items-end justify-center pb-1">
+                  <span className="text-xs text-zinc-400 group-hover:text-zinc-600 transition-colors">Ver completo →</span>
+                </div>
               </div>
             </div>
           )}
@@ -516,6 +547,51 @@ export default function LibraryPage() {
           >
             Eliminar post
           </button>
+        </div>
+      )}
+
+      {/* Modal guión expandido */}
+      {scriptModal && (
+        <div
+          className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4"
+          onClick={() => setScriptModal(null)}
+        >
+          <div
+            className="bg-white border border-zinc-200 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-100">
+              <p className="text-sm font-semibold text-zinc-900 truncate pr-4">{scriptModal.title}</p>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={() => { navigator.clipboard.writeText(scriptModal.content) }}
+                  className="text-xs text-zinc-400 hover:text-zinc-700 border border-zinc-200 hover:border-zinc-300 rounded-lg px-3 py-1.5 transition-colors"
+                >
+                  Copiar
+                </button>
+                <button
+                  onClick={() => setScriptModal(null)}
+                  className="w-7 h-7 flex items-center justify-center text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 rounded-lg transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+            <div className="overflow-y-auto px-6 py-5 flex-1">
+              <div className="space-y-1.5">
+                {scriptModal.content.split('\n').map((line, i) => {
+                  if (line.startsWith('# ') || line.startsWith('## ')) {
+                    return <h3 key={i} className="text-sm font-bold text-zinc-900 mt-4 mb-1">{line.replace(/^#+\s*/, '')}</h3>
+                  }
+                  if (line.startsWith('**') && line.endsWith('**')) {
+                    return <p key={i} className="text-sm font-semibold text-zinc-800">{line.replace(/\*\*/g, '')}</p>
+                  }
+                  if (line.trim() === '') return <div key={i} className="h-2" />
+                  return <p key={i} className="text-sm text-zinc-700 leading-relaxed">{line}</p>
+                })}
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
