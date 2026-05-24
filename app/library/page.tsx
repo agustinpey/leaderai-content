@@ -73,6 +73,10 @@ export default function LibraryPage() {
   const [editingCaption, setEditingCaption] = useState<string | null>(null)
   const [savingCaption, setSavingCaption] = useState(false)
 
+  // Script content editing
+  const [editingScriptContent, setEditingScriptContent] = useState<string | null>(null)
+  const [savingScriptContent, setSavingScriptContent] = useState(false)
+
   // Script expand modal
   const [scriptModal, setScriptModal] = useState<{ title: string; content: string } | null>(null)
 
@@ -151,6 +155,20 @@ export default function LibraryPage() {
     await fetch(`/api/scripts?id=${id}`, { method: 'DELETE' })
     setSelectedScript(null)
     fetchScripts()
+  }
+
+  async function handleSaveScriptContent() {
+    if (!selectedScript || editingScriptContent === null) return
+    setSavingScriptContent(true)
+    await fetch('/api/scripts', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: selectedScript.id, content: editingScriptContent }),
+    })
+    setScripts((prev) => prev.map((s) => (s.id === selectedScript.id ? { ...s, content: editingScriptContent } : s)))
+    setSelectedScript({ ...selectedScript, content: editingScriptContent })
+    setSavingScriptContent(false)
+    setEditingScriptContent(null)
   }
 
   async function handleSaveCaption() {
@@ -242,7 +260,7 @@ export default function LibraryPage() {
             {scripts.map((s) => (
               <div
                 key={s.id}
-                onClick={() => setSelectedScript(s.id === selectedScript?.id ? null : s)}
+                onClick={() => { setSelectedScript(s.id === selectedScript?.id ? null : s); setEditingScriptContent(null) }}
                 className={`flex items-center gap-4 bg-white border rounded-xl px-4 py-3.5 cursor-pointer transition-colors ${
                   selectedScript?.id === s.id ? 'border-zinc-400' : 'border-zinc-200 hover:border-zinc-300'
                 }`}
@@ -373,28 +391,62 @@ export default function LibraryPage() {
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="text-xs text-zinc-500">Guión completo</label>
-              <button
-                onClick={() => setScriptModal({ title: selectedScript.title, content: selectedScript.content })}
-                className="text-xs text-zinc-400 hover:text-zinc-700 transition-colors"
-              >
-                ⤢ Expandir
-              </button>
-            </div>
-            <div
-              onClick={() => setScriptModal({ title: selectedScript.title, content: selectedScript.content })}
-              className="bg-zinc-50 border border-zinc-200 rounded-xl p-4 space-y-1 max-h-64 overflow-hidden cursor-pointer hover:border-zinc-300 relative group transition-colors"
-            >
-              {selectedScript.content.split('\n').slice(0, 12).map((line, i) => {
-                if (line.startsWith('## ') || line.startsWith('**')) {
-                  return <p key={i} className="text-xs font-semibold text-zinc-900 mt-2">{line.replace(/^##\s+/, '').replace(/\*\*/g, '')}</p>
-                }
-                if (line.trim() === '') return <div key={i} className="h-1" />
-                return <p key={i} className="text-xs text-zinc-600 leading-relaxed">{line}</p>
-              })}
-              <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-zinc-50 to-transparent rounded-b-xl flex items-end justify-center pb-1.5">
-                <span className="text-xs text-zinc-400 group-hover:text-zinc-600 transition-colors">Ver completo →</span>
+              <div className="flex items-center gap-2">
+                {editingScriptContent === null ? (
+                  <>
+                    <button
+                      onClick={() => setEditingScriptContent(selectedScript.content)}
+                      className="text-xs text-zinc-400 hover:text-zinc-700 transition-colors"
+                    >
+                      Editar
+                    </button>
+                    <button
+                      onClick={() => setScriptModal({ title: selectedScript.title, content: selectedScript.content })}
+                      className="text-xs text-zinc-400 hover:text-zinc-700 transition-colors"
+                    >
+                      ⤢ Expandir
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button onClick={() => setEditingScriptContent(null)} className="text-xs text-zinc-400 hover:text-zinc-600">
+                      Cancelar
+                    </button>
+                    <button
+                      onClick={handleSaveScriptContent}
+                      disabled={savingScriptContent}
+                      className="text-xs text-blue-600 hover:text-blue-500 disabled:opacity-50 font-medium"
+                    >
+                      {savingScriptContent ? 'Guardando...' : 'Guardar'}
+                    </button>
+                  </>
+                )}
               </div>
             </div>
+            {editingScriptContent !== null ? (
+              <textarea
+                value={editingScriptContent}
+                onChange={(e) => setEditingScriptContent(e.target.value)}
+                rows={16}
+                className="w-full text-xs bg-white border border-zinc-300 rounded-xl px-4 py-3 text-zinc-700 leading-relaxed resize-y outline-none focus:border-zinc-400"
+              />
+            ) : (
+              <div
+                onClick={() => setScriptModal({ title: selectedScript.title, content: selectedScript.content })}
+                className="bg-zinc-50 border border-zinc-200 rounded-xl p-4 space-y-1 max-h-64 overflow-hidden cursor-pointer hover:border-zinc-300 relative group transition-colors"
+              >
+                {selectedScript.content.split('\n').slice(0, 12).map((line, i) => {
+                  if (line.startsWith('## ') || line.startsWith('**')) {
+                    return <p key={i} className="text-xs font-semibold text-zinc-900 mt-2">{line.replace(/^##\s+/, '').replace(/\*\*/g, '')}</p>
+                  }
+                  if (line.trim() === '') return <div key={i} className="h-1" />
+                  return <p key={i} className="text-xs text-zinc-600 leading-relaxed">{line}</p>
+                })}
+                <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-zinc-50 to-transparent rounded-b-xl flex items-end justify-center pb-1.5">
+                  <span className="text-xs text-zinc-400 group-hover:text-zinc-600 transition-colors">Ver completo →</span>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
