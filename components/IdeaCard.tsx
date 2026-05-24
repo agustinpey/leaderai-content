@@ -42,6 +42,7 @@ interface Props {
   onSendToChat: (id: string) => void
   onStatusChange: (id: string, status: ContentIdea['status']) => void
   onSaveToLibrary: (idea: ContentIdea) => void
+  onDelete: (id: string) => void
   expanded?: boolean
   brief?: string
   briefLoading?: boolean
@@ -53,6 +54,7 @@ export default function IdeaCard({
   onSendToChat,
   onStatusChange,
   onSaveToLibrary,
+  onDelete,
   expanded,
   brief,
   briefLoading,
@@ -70,9 +72,9 @@ export default function IdeaCard({
 
   return (
     <div className={`border rounded-xl bg-white transition-all ${expanded ? 'border-zinc-300 shadow-sm' : 'border-zinc-200 hover:border-zinc-300'}`}>
-      <div className="p-4">
+      <div className="p-4 relative">
         {/* Header */}
-        <div className="flex items-start gap-3">
+        <div className="flex items-start gap-3 pr-6">
           <div className="w-8 h-8 rounded-lg bg-zinc-100 flex items-center justify-center text-sm shrink-0 text-zinc-500">
             {FORMAT_ICON[idea.format_suggestion] || '▶'}
           </div>
@@ -81,6 +83,15 @@ export default function IdeaCard({
             <p className="text-xs text-zinc-500 mt-1 line-clamp-2">{idea.pain_point}</p>
           </div>
         </div>
+
+        {/* Delete button */}
+        <button
+          onClick={(e) => { e.stopPropagation(); onDelete(idea.id) }}
+          className="absolute top-3 right-3 w-6 h-6 flex items-center justify-center text-zinc-300 hover:text-red-400 transition-colors rounded-md hover:bg-red-50"
+          title="Eliminar idea"
+        >
+          🗑
+        </button>
 
         {/* Badges */}
         <div className="flex flex-wrap gap-1.5 mt-3">

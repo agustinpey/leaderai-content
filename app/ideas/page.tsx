@@ -121,6 +121,11 @@ export default function IdeasPage() {
     setIdeas((prev) => prev.map((i) => (i.id === idea.id ? { ...i, status: 'usada' } : i)))
   }
 
+  async function handleDelete(id: string) {
+    await fetch(`/api/content-ideas?id=${id}`, { method: 'DELETE' })
+    setIdeas((prev) => prev.filter((i) => i.id !== id))
+  }
+
   async function handleStatusChange(id: string, status: ContentIdea['status']) {
     await fetch('/api/content-ideas', {
       method: 'PATCH',
@@ -267,6 +272,7 @@ export default function IdeasPage() {
                 onSendToChat={handleSendToChat}
                 onStatusChange={handleStatusChange}
                 onSaveToLibrary={handleSaveToLibrary}
+                onDelete={handleDelete}
                 expanded={expandedId === idea.id}
                 brief={briefs[idea.id]}
                 briefLoading={briefLoading === idea.id}
