@@ -1,5 +1,5 @@
 import { supabaseAdmin } from './supabase'
-import { ContentContext, PostWithMetrics, WeeklyInsight } from './types'
+import { ContentContext, PostWithMetrics, WeeklyInsight, CompetitorPost } from './types'
 import { format, subDays, subWeeks } from 'date-fns'
 
 /**
@@ -14,7 +14,7 @@ export async function buildContentContext(): Promise<ContentContext> {
   const thirtyDaysAgo = subDays(new Date(), 30).toISOString()
   const twoWeeksAgo = subWeeks(new Date(), 2).toISOString()
 
-  const [recentPostsResult, topPostsResult, latestInsightResult, pendingPostsResult] =
+  const [recentPostsResult, topPostsResult, latestInsightResult, pendingPostsResult, analyzedPostsResult, competitorPostsResult] =
     await Promise.all([
       // Últimos 10 posts con métricas
       supabaseAdmin
@@ -48,6 +48,22 @@ export async function buildContentContext(): Promise<ContentContext> {
         .in('status', ['listo', 'programado'])
         .order('scheduled_at', { ascending: true })
         .limit(5),
+
+      // Posts propios analizados con feedback de IA
+      supabaseAdmin
+        .from('posts')
+        .select(`*, metrics:post_metrics(*)`)
+        .not('ai_analysis', 'is', null)
+        .order('ai_analyzed_at', { ascending: false })
+        .limit(6),
+
+      // Posts de referentes con análisis IA
+      supabaseAdmin
+        .from('competitor_posts')
+        .select(`*, competitor:competitors(username, display_name)`)
+        .not('ai_topic', 'is', null)
+        .order('engagement_rate', { ascending: false })
+        .limit(15),
     ])
 
   const recentPosts = (recentPostsResult.data || []) as PostWithMetrics[]
@@ -64,11 +80,35 @@ export async function buildContentContext(): Promise<ContentContext> {
 
   const pendingPosts = pendingPostsResult.data || []
 
+  const analyzedPosts = (analyzedPostsResult.data || []) as PostWithMetrics[]
+
+  // Mapear competitor posts con username del referente
+  const rawCompetitorPosts = competitorPostsResult.data || []
+  const competitorPosts: CompetitorPost[] = rawCompetitorPosts.map((p: any) => ({
+    id: p.id,
+    competitor_id: p.competitor_id,
+    competitor_username: p.competitor?.username || 'desconocido',
+    caption: p.caption,
+    hook_text: p.hook_text,
+    post_type: p.post_type,
+    likes: p.likes || 0,
+    comments: p.comments || 0,
+    plays: p.plays,
+    engagement_rate: p.engagement_rate,
+    published_at: p.published_at,
+    ai_topic: p.ai_topic,
+    ai_hook_type: p.ai_hook_type,
+    ai_cta_type: p.ai_cta_type,
+    ai_content_gap: p.ai_content_gap || false,
+  }))
+
   return {
     recentPosts,
     topPostsBySaves,
     latestInsight,
     pendingPosts,
+    analyzedPosts,
+    competitorPosts,
   }
 }
 
@@ -151,6 +191,61 @@ export function formatContextForClaude(ctx: ContentContext): string {
         : 'sin fecha'
       lines.push(`- "${post.title}" | ${post.format} | ${post.status} | ${schedDate}`)
     })
+    lines.push('')
+  }
+
+  // Análisis de reels propios (feedback guardado)
+  if (ctx.analyzedPosts.length > 0) {
+    lines.push('--- FEEDBACK DE REELS ANALIZADOS ---')
+    ctx.analyzedPosts.forEach((post) => {
+      const m = post.metrics
+      lines.push(`"${post.title}" | ${post.format} | ${m ? `${m.saves} saves · ${m.reach} reach` : 'sin métricas'}`)
+      if (post.ai_analysis) {
+        const analysisLines = post.ai_analysis.split('\n')
+        const mejIdx = analysisLines.findIndex(l => l.includes('TOP 3 MEJORAS') || l.includes('MEJORAS PARA'))
+        const puntuacion = analysisLines.find(l => l.includes('PUNTUACIÓN') || l.includes('PUNTAJE'))
+        if (mejIdx >= 0) {
+          lines.push('  Mejoras detectadas:')
+          analysisLines.slice(mejIdx + 1, mejIdx + 5).filter(l => l.trim()).forEach(l => lines.push(`    ${l.trim()}`))
+        }
+        if (puntuacion) lines.push(`  ${puntuacion.trim()}`)
+      }
+    })
+    lines.push('')
+  }
+
+  // Referentes: posts analizados con IA
+  if (ctx.competitorPosts.length > 0) {
+    lines.push('--- REFERENTES (posts analizados) ---')
+
+    // Agrupar por referente
+    const byCompetitor: Record<string, typeof ctx.competitorPosts> = {}
+    ctx.competitorPosts.forEach(p => {
+      if (!byCompetitor[p.competitor_username]) byCompetitor[p.competitor_username] = []
+      byCompetitor[p.competitor_username].push(p)
+    })
+
+    Object.entries(byCompetitor).forEach(([username, posts]) => {
+      lines.push(`@${username} (${posts.length} posts analizados):`)
+      posts.slice(0, 3).forEach(p => {
+        const eng = p.engagement_rate ? `${(p.engagement_rate * 100).toFixed(1)}% eng` : ''
+        const topic = p.ai_topic ? `tema: ${p.ai_topic}` : ''
+        const hookType = p.ai_hook_type ? `hook: ${p.ai_hook_type}` : ''
+        const gap = p.ai_content_gap ? ' ★ GAP (vos no lo cubriste)' : ''
+        lines.push(`  - [${p.post_type || 'reel'}] ${[eng, topic, hookType].filter(Boolean).join(' | ')}${gap}`)
+        if (p.hook_text) lines.push(`    Hook: "${p.hook_text.slice(0, 120)}"`)
+      })
+    })
+
+    // Gaps específicos
+    const gaps = ctx.competitorPosts.filter(p => p.ai_content_gap)
+    if (gaps.length > 0) {
+      lines.push('')
+      lines.push('Oportunidades de contenido (temas que ellos cubrieron y vos no):')
+      gaps.forEach(p => {
+        lines.push(`  ★ "${p.ai_topic}" — @${p.competitor_username}${p.hook_text ? ` — hook: "${p.hook_text.slice(0, 80)}"` : ''}`)
+      })
+    }
     lines.push('')
   }
 

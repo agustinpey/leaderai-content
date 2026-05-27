@@ -15,9 +15,29 @@ export interface Post {
   media_url: string | null
   thumbnail_url: string | null
   tags: string[] | null
+  ai_analysis: string | null
+  ai_analyzed_at: string | null
   created_at: string
   updated_at: string
   metrics?: PostMetrics
+}
+
+export interface CompetitorPost {
+  id: string
+  competitor_id: string
+  competitor_username: string
+  caption: string | null
+  hook_text: string | null
+  post_type: string | null
+  likes: number
+  comments: number
+  plays: number | null
+  engagement_rate: number | null
+  published_at: string | null
+  ai_topic: string | null
+  ai_hook_type: string | null
+  ai_cta_type: string | null
+  ai_content_gap: boolean
 }
 
 export interface PostMetrics {
@@ -97,6 +117,8 @@ export interface ContentContext {
   topPostsBySaves: PostWithMetrics[]
   latestInsight: WeeklyInsight | null
   pendingPosts: Post[]
+  analyzedPosts: PostWithMetrics[]
+  competitorPosts: CompetitorPost[]
 }
 
 export interface PostWithMetrics extends Omit<Post, 'metrics'> {

@@ -113,5 +113,11 @@ Justificá en una línea basándote en los números.`
   const analysis =
     message.content[0].type === 'text' ? message.content[0].text : ''
 
+  // Guardar análisis en el post para retroalimentar el chat
+  await supabaseAdmin
+    .from('posts')
+    .update({ ai_analysis: analysis, ai_analyzed_at: new Date().toISOString() })
+    .eq('id', postId)
+
   return Response.json({ analysis, metrics })
 }
