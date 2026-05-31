@@ -42,6 +42,8 @@ interface Idea {
   created_at: string
 }
 
+const CHAT_STORAGE_KEY = 'leaderai_chat_v1'
+
 function ChatContent() {
   const searchParams = useSearchParams()
   const [messages, setMessages] = useState<ChatMessage[]>([])
@@ -57,7 +59,36 @@ function ChatContent() {
   const [ideas, setIdeas] = useState<Idea[]>([])
   const [ideasLoading, setIdeasLoading] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const abortRef = useRef<AbortController | null>(null)
+
+  // Cargar historial desde localStorage al montar
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(CHAT_STORAGE_KEY)
+      if (saved) setMessages(JSON.parse(saved))
+    } catch {}
+  }, [])
+
+  // Guardar historial en localStorage cuando cambia
+  useEffect(() => {
+    if (messages.length > 0 && !streaming) {
+      try {
+        localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(messages))
+      } catch {}
+    }
+  }, [messages, streaming])
+
+  // Scroll automático solo si el usuario ya está cerca del final
+  useEffect(() => {
+    const container = scrollContainerRef.current
+    if (!container) return
+    const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight
+    if (distanceFromBottom < 180) {
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }
+  }, [messages])
 
   useEffect(() => {
     const ideaPrompt = searchParams.get('idea_prompt')
@@ -66,10 +97,6 @@ function ChatContent() {
       textareaRef.current?.focus()
     }
   }, [searchParams])
-
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
 
   useEffect(() => {
     if (showIdeas) fetchIdeas()
@@ -83,6 +110,18 @@ function ChatContent() {
     setIdeasLoading(false)
   }
 
+  function handleStop() {
+    abortRef.current?.abort()
+    setLoading(false)
+    setStreaming(false)
+  }
+
+  function handleClearChat() {
+    if (!confirm('¿Borrar toda la conversación?')) return
+    setMessages([])
+    localStorage.removeItem(CHAT_STORAGE_KEY)
+  }
+
   async function sendMessage(userMessage: string) {
     if (!userMessage.trim() || loading) return
     const newMessages: ChatMessage[] = [...messages, { role: 'user', content: userMessage }]
@@ -92,11 +131,15 @@ function ChatContent() {
     setStreaming(true)
     setMessages([...newMessages, { role: 'assistant', content: '' }])
 
+    const controller = new AbortController()
+    abortRef.current = controller
+
     try {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages: newMessages }),
+        signal: controller.signal,
       })
       if (!res.ok) throw new Error('Error en el servidor')
       const reader = res.body!.getReader()
@@ -108,11 +151,14 @@ function ChatContent() {
         fullText += decoder.decode(value, { stream: true })
         setMessages([...newMessages, { role: 'assistant', content: fullText }])
       }
-    } catch {
-      setMessages([...newMessages, { role: 'assistant', content: 'Error al conectar con Claude. Revisá la API key.' }])
+    } catch (err: any) {
+      if (err?.name !== 'AbortError') {
+        setMessages([...newMessages, { role: 'assistant', content: 'Error al conectar con Claude. Revisá la API key.' }])
+      }
     } finally {
       setLoading(false)
       setStreaming(false)
+      abortRef.current = null
     }
   }
 
@@ -201,14 +247,24 @@ function ChatContent() {
             <h1 className="text-sm font-semibold text-zinc-900">Chat con Claude</h1>
             <p className="text-xs text-zinc-400 mt-0.5">Claude lee tus métricas antes de responder</p>
           </div>
-          <button
-            onClick={() => setShowIdeas(!showIdeas)}
-            className={`text-xs px-3 py-1.5 rounded-lg border transition-colors flex items-center gap-1.5 ${
-              showIdeas ? 'bg-zinc-900 text-white border-zinc-900' : 'border-zinc-200 text-zinc-500 hover:border-zinc-300'
-            }`}
-          >
-            ◎ {showIdeas ? 'Ocultar ideas' : 'Banco de Ideas'}
-          </button>
+          <div className="flex items-center gap-2">
+            {messages.length > 0 && !loading && (
+              <button
+                onClick={handleClearChat}
+                className="text-xs px-3 py-1.5 rounded-lg border border-zinc-200 text-zinc-400 hover:text-zinc-600 hover:border-zinc-300 transition-colors"
+              >
+                Nueva conversación
+              </button>
+            )}
+            <button
+              onClick={() => setShowIdeas(!showIdeas)}
+              className={`text-xs px-3 py-1.5 rounded-lg border transition-colors flex items-center gap-1.5 ${
+                showIdeas ? 'bg-zinc-900 text-white border-zinc-900' : 'border-zinc-200 text-zinc-500 hover:border-zinc-300'
+              }`}
+            >
+              ◎ {showIdeas ? 'Ocultar ideas' : 'Banco de Ideas'}
+            </button>
+          </div>
         </div>
 
         {savedMsg && (
@@ -218,7 +274,7 @@ function ChatContent() {
         )}
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
+        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
           {messages.length === 0 && (
             <div className="flex flex-col items-center justify-center h-full gap-6 text-center">
               <div>
@@ -304,16 +360,26 @@ function ChatContent() {
               disabled={loading}
               className="flex-1 bg-transparent text-sm text-zinc-700 placeholder-zinc-400 resize-none outline-none max-h-40 leading-relaxed"
             />
-            <button
-              onClick={() => sendMessage(input)}
-              disabled={!input.trim() || loading}
-              className="shrink-0 w-8 h-8 rounded-xl bg-zinc-900 hover:bg-zinc-800 disabled:bg-zinc-200 disabled:cursor-not-allowed text-white disabled:text-zinc-400 flex items-center justify-center transition-colors text-sm font-medium"
-            >
-              {loading ? '…' : '↑'}
-            </button>
+            {streaming ? (
+              <button
+                onClick={handleStop}
+                className="shrink-0 w-8 h-8 rounded-xl bg-red-500 hover:bg-red-600 text-white flex items-center justify-center transition-colors text-xs font-bold"
+                title="Detener respuesta"
+              >
+                ■
+              </button>
+            ) : (
+              <button
+                onClick={() => sendMessage(input)}
+                disabled={!input.trim() || loading}
+                className="shrink-0 w-8 h-8 rounded-xl bg-zinc-900 hover:bg-zinc-800 disabled:bg-zinc-200 disabled:cursor-not-allowed text-white disabled:text-zinc-400 flex items-center justify-center transition-colors text-sm font-medium"
+              >
+                ↑
+              </button>
+            )}
           </div>
           <p className="text-xs text-zinc-400 mt-2 text-center">
-            Enter para enviar · Shift+Enter para nueva línea
+            Enter para enviar · Shift+Enter para nueva línea{streaming ? ' · ■ para detener' : ''}
           </p>
         </div>
       </div>
