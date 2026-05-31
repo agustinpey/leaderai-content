@@ -26,6 +26,12 @@ interface SaveModal {
   format: PostFormat
 }
 
+interface ScriptSaveModal {
+  content: string
+  title: string
+  format: PostFormat
+}
+
 interface IdeaModal {
   content: string
   title: string
@@ -58,7 +64,9 @@ function ChatContent() {
   const [streaming, setStreaming] = useState(false)
   const [saveModal, setSaveModal] = useState<SaveModal | null>(null)
   const [ideaModal, setIdeaModal] = useState<IdeaModal | null>(null)
+  const [scriptSaveModal, setScriptSaveModal] = useState<ScriptSaveModal | null>(null)
   const [saving, setSaving] = useState(false)
+  const [savingScript, setSavingScript] = useState(false)
   const [savingIdea, setSavingIdea] = useState(false)
   const [savedMsg, setSavedMsg] = useState<string | null>(null)
   const [showIdeas, setShowIdeas] = useState(false)
@@ -197,14 +205,26 @@ function ChatContent() {
     setTimeout(() => setSavedMsg(null), 3000)
   }
 
-  async function handleSaveScript(content: string) {
-    const title = content.split('\n')[0]?.slice(0, 80) || 'Guión sin título'
-    await fetch('/api/scripts', {
+  function openScriptSaveModal(content: string) {
+    const firstLine = content.split('\n').find(l => l.trim() && !l.startsWith('#'))?.replace(/^#+\s*/, '').slice(0, 80) || ''
+    setScriptSaveModal({ content, title: firstLine, format: 'reel' })
+  }
+
+  async function handleSaveScript() {
+    if (!scriptSaveModal || !scriptSaveModal.title.trim()) return
+    setSavingScript(true)
+    const res = await fetch('/api/scripts', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title, content, format: 'reel', status: 'pendiente' }),
+      body: JSON.stringify({ title: scriptSaveModal.title, content: scriptSaveModal.content, format: scriptSaveModal.format, status: 'pendiente' }),
     })
-    setSavedMsg('Guión guardado en Biblioteca → Guiones')
+    setSavingScript(false)
+    setScriptSaveModal(null)
+    if (res.ok) {
+      setSavedMsg('Guión guardado en Biblioteca → Guiones')
+    } else {
+      setSavedMsg('Error al guardar el guión')
+    }
     setTimeout(() => setSavedMsg(null), 3000)
   }
 
@@ -319,7 +339,7 @@ function ChatContent() {
                   {msg.role === 'assistant' && msg.content && isComplete && (
                     <div className="self-start flex flex-wrap gap-2">
                       <button
-                        onClick={() => handleSaveScript(msg.content)}
+                        onClick={() => openScriptSaveModal(msg.content)}
                         className="text-xs text-zinc-900 hover:text-zinc-700 bg-zinc-100 hover:bg-zinc-200 border border-zinc-200 rounded-lg px-3 py-1.5 transition-colors font-medium"
                       >
                         ↓ Guardar guión
@@ -446,6 +466,47 @@ function ChatContent() {
         </div>
       )}
 
+      {/* Modal guardar guión */}
+      {scriptSaveModal && (
+        <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50 p-4">
+          <div className="bg-white border border-zinc-200 rounded-2xl p-6 w-full max-w-sm shadow-xl">
+            <h2 className="text-base font-semibold text-zinc-900 mb-1">Guardar guión</h2>
+            <p className="text-xs text-zinc-400 mb-5">Se guarda en Biblioteca → Guiones</p>
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs text-zinc-500 mb-1.5 block">Título *</label>
+                <input
+                  type="text"
+                  value={scriptSaveModal.title}
+                  onChange={(e) => setScriptSaveModal({ ...scriptSaveModal, title: e.target.value })}
+                  placeholder="Ej: Por qué perdés leads en WhatsApp"
+                  autoFocus
+                  className="w-full border border-zinc-200 rounded-xl px-3 py-2.5 text-sm text-zinc-900 placeholder-zinc-400 outline-none focus:border-zinc-400"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-zinc-500 mb-1.5 block">Formato</label>
+                <select
+                  value={scriptSaveModal.format}
+                  onChange={(e) => setScriptSaveModal({ ...scriptSaveModal, format: e.target.value as PostFormat })}
+                  className="w-full border border-zinc-200 rounded-xl px-3 py-2.5 text-sm text-zinc-700 outline-none focus:border-zinc-400"
+                >
+                  <option value="reel">Reel</option>
+                  <option value="carrusel">Carrusel</option>
+                  <option value="historia">Historia</option>
+                </select>
+              </div>
+            </div>
+            <div className="flex gap-3 mt-5">
+              <button onClick={() => setScriptSaveModal(null)} className="flex-1 text-sm border border-zinc-200 hover:border-zinc-300 text-zinc-500 rounded-xl py-2.5 transition-colors">Cancelar</button>
+              <button onClick={handleSaveScript} disabled={!scriptSaveModal.title.trim() || savingScript} className="flex-1 text-sm bg-zinc-900 hover:bg-zinc-800 disabled:bg-zinc-200 text-white disabled:text-zinc-400 rounded-xl py-2.5 font-medium transition-colors">
+                {savingScript ? 'Guardando...' : 'Guardar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Modal guardar en biblioteca */}
       {saveModal && (
         <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50 p-4">
@@ -474,7 +535,6 @@ function ChatContent() {
                   <option value="reel">Reel</option>
                   <option value="carrusel">Carrusel</option>
                   <option value="historia">Historia</option>
-                  <option value="foto">Foto</option>
                 </select>
               </div>
             </div>
@@ -516,7 +576,6 @@ function ChatContent() {
                   <option value="reel">Reel</option>
                   <option value="carrusel">Carrusel</option>
                   <option value="historia">Historia</option>
-                  <option value="foto">Foto</option>
                 </select>
               </div>
               <div>
