@@ -46,7 +46,13 @@ const CHAT_STORAGE_KEY = 'leaderai_chat_v1'
 
 function ChatContent() {
   const searchParams = useSearchParams()
-  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [messages, setMessages] = useState<ChatMessage[]>(() => {
+    if (typeof window === 'undefined') return []
+    try {
+      const saved = localStorage.getItem(CHAT_STORAGE_KEY)
+      return saved ? JSON.parse(saved) : []
+    } catch { return [] }
+  })
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [streaming, setStreaming] = useState(false)
@@ -63,22 +69,14 @@ function ChatContent() {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const abortRef = useRef<AbortController | null>(null)
 
-  // Cargar historial desde localStorage al montar
+  // Guardar historial en localStorage en cada cambio
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(CHAT_STORAGE_KEY)
-      if (saved) setMessages(JSON.parse(saved))
-    } catch {}
-  }, [])
-
-  // Guardar historial en localStorage cuando cambia
-  useEffect(() => {
-    if (messages.length > 0 && !streaming) {
+    if (messages.length > 0) {
       try {
         localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(messages))
       } catch {}
     }
-  }, [messages, streaming])
+  }, [messages])
 
   // Scroll automático solo si el usuario ya está cerca del final
   useEffect(() => {
