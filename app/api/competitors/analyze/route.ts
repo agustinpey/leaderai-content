@@ -1,13 +1,15 @@
 import { supabaseAdmin } from '@/lib/supabase'
 import Anthropic from '@anthropic-ai/sdk'
 
+export const maxDuration = 60
+
 export async function POST() {
   const { data: posts, error } = await supabaseAdmin
     .from('competitor_posts')
     .select('*, competitor:competitors(username, follower_count, avg_engagement_rate)')
     .is('ai_topic', null)
     .order('scraped_at', { ascending: false })
-    .limit(50)
+    .limit(20)
 
   if (error) return Response.json({ error: error.message }, { status: 500 })
   if (!posts?.length) return Response.json({ message: 'No hay posts pendientes de análisis', analyzed: 0 })
@@ -50,8 +52,8 @@ Respondé SOLO con un JSON array, sin markdown:
 ]`
 
   const message = await anthropic.messages.create({
-    model: 'claude-opus-4-6',
-    max_tokens: 2000,
+    model: 'claude-sonnet-4-6',
+    max_tokens: 4000,
     messages: [{ role: 'user', content: prompt }],
   })
 
