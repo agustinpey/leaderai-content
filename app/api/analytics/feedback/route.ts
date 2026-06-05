@@ -82,7 +82,7 @@ Respondé con JSON exacto (sin texto adicional):
 
   const client = new Anthropic({ apiKey })
   const message = await client.messages.create({
-    model: 'claude-opus-4-7',
+    model: 'claude-opus-4-8',
     max_tokens: 1024,
     messages: [{ role: 'user', content: prompt }],
   })

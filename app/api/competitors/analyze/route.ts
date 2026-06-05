@@ -58,7 +58,10 @@ Respondé SOLO con un JSON array, sin markdown:
   const rawText = (message.content[0] as any).text
   let analyzed: any[] = []
   try {
-    analyzed = JSON.parse(rawText)
+    // Claude a veces envuelve el JSON en ```json ... ```
+    const jsonMatch = rawText.match(/\[[\s\S]*\]/)
+    if (!jsonMatch) throw new Error('no array found')
+    analyzed = JSON.parse(jsonMatch[0])
   } catch {
     return Response.json({ error: 'Claude no devolvió JSON válido', raw: rawText }, { status: 500 })
   }
