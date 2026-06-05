@@ -52,6 +52,8 @@ const CHAT_STORAGE_KEY = 'leaderai_chat_v1'
 
 function ChatContent() {
   const searchParams = useSearchParams()
+  const [analysisBanner, setAnalysisBanner] = useState<string | null>(null)
+
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
     if (typeof window === 'undefined') return []
     try {
@@ -101,6 +103,32 @@ function ChatContent() {
     if (ideaPrompt) {
       setInput(decodeURIComponent(ideaPrompt))
       textareaRef.current?.focus()
+    }
+
+    const fromAnalysis = searchParams.get('from_analysis')
+    if (fromAnalysis === '1') {
+      try {
+        const raw = sessionStorage.getItem('pending_reel_analysis')
+        if (raw) {
+          sessionStorage.removeItem('pending_reel_analysis')
+          const { title, analysis, metrics } = JSON.parse(raw)
+          const metricsLine = metrics
+            ? `\nMétricas: ${metrics.plays ?? 0} plays · ${metrics.reach ?? 0} reach · ${metrics.saves ?? 0} saves · ${metrics.likes ?? 0} likes`
+            : ''
+          const contextMsg: ChatMessage = {
+            role: 'user',
+            content: `Acabo de analizar mi Reel "${title}".${metricsLine}\n\nAquí está el análisis completo:\n\n${analysis}`,
+          }
+          const ackMsg: ChatMessage = {
+            role: 'assistant',
+            content: `Entendido — tengo el análisis de "${title}" en contexto. ¿Querés que te genere el guión mejorado aplicando esos cambios, que trabajemos el hook primero, o preferís otra cosa?`,
+          }
+          setMessages([contextMsg, ackMsg])
+          setAnalysisBanner(title)
+          setInput('Generame el guión mejorado aplicando esas mejoras.')
+          textareaRef.current?.focus()
+        }
+      } catch {}
     }
   }, [searchParams])
 
@@ -284,6 +312,13 @@ function ChatContent() {
             </button>
           </div>
         </div>
+
+        {analysisBanner && (
+          <div className="mx-6 mt-3 text-xs px-4 py-2.5 bg-zinc-900 text-white rounded-lg flex items-center justify-between">
+            <span>✦ Análisis de <strong>"{analysisBanner}"</strong> cargado como contexto del agente</span>
+            <button onClick={() => setAnalysisBanner(null)} className="ml-3 text-zinc-400 hover:text-white">✕</button>
+          </div>
+        )}
 
         {savedMsg && (
           <div className="mx-6 mt-3 text-xs px-4 py-2.5 bg-green-50 border border-green-200 text-green-700 rounded-lg">

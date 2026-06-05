@@ -190,6 +190,16 @@ export default function AnalyzePage() {
     setFallback(false)
   }
 
+  function handleLoadIntoAgent() {
+    const postTitle = selectedPost?.title || title || 'Reel subido'
+    sessionStorage.setItem('pending_reel_analysis', JSON.stringify({
+      title: postTitle,
+      analysis: analysis!,
+      metrics: analysisMetrics,
+    }))
+    window.location.href = '/chat?from_analysis=1'
+  }
+
   function renderAnalysis(text: string) {
     return (
       <div className="space-y-1">
@@ -522,17 +532,17 @@ export default function AnalyzePage() {
             </div>
 
             {/* CTA al chat */}
-            <div className="mt-4 bg-white border border-zinc-200 rounded-xl p-4 flex items-center justify-between">
+            <div className="mt-4 bg-zinc-900 rounded-xl p-4 flex items-center justify-between">
               <div>
-                <p className="text-sm text-zinc-800">¿Querés que Claude reescriba el guión?</p>
-                <p className="text-xs text-zinc-400 mt-0.5">Continuá en el chat con este contexto</p>
+                <p className="text-sm text-white font-medium">¿Querés mejorar el guión?</p>
+                <p className="text-xs text-zinc-400 mt-0.5">Claude recibe el análisis como contexto y generás desde ahí</p>
               </div>
-              <a
-                href="/chat"
-                className="text-xs bg-zinc-50 hover:bg-zinc-100 text-zinc-600 border border-zinc-200 rounded-lg px-4 py-2 transition-colors"
+              <button
+                onClick={handleLoadIntoAgent}
+                className="text-xs bg-white hover:bg-zinc-100 text-zinc-900 font-medium rounded-lg px-4 py-2 transition-colors shrink-0 ml-4"
               >
-                Ir al chat →
-              </a>
+                ✦ Cargar en el agente
+              </button>
             </div>
           </div>
         )}
