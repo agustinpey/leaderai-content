@@ -81,8 +81,9 @@ export interface Script {
   hook: string | null
   format: PostFormat
   topic: string | null
-  status: 'borrador' | 'aprobado' | 'usado'
+  status: 'pendiente' | 'hecho' | 'rehacer' | 'borrador' | 'aprobado' | 'usado'
   post_id: string | null
+  source_idea_id: string | null
   created_at: string
 }
 

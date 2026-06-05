@@ -14,7 +14,8 @@ export async function buildContentContext(): Promise<ContentContext> {
   const thirtyDaysAgo = subDays(new Date(), 30).toISOString()
   const twoWeeksAgo = subWeeks(new Date(), 2).toISOString()
 
-  const [recentPostsResult, topPostsResult, latestInsightResult, pendingPostsResult, analyzedPostsResult, competitorPostsResult] =
+  // Queries separadas para que si una falla (columna no existe aún) no rompa todo el contexto
+  const [recentPostsResult, topPostsResult, latestInsightResult, pendingPostsResult] =
     await Promise.all([
       // Últimos 10 posts con métricas
       supabaseAdmin
@@ -48,16 +49,19 @@ export async function buildContentContext(): Promise<ContentContext> {
         .in('status', ['listo', 'programado'])
         .order('scheduled_at', { ascending: true })
         .limit(5),
+    ])
 
-      // Posts propios analizados con feedback de IA
+  // Queries opcionales — si la columna no existe aún en DB, devuelve []
+  let analyzedPostsResult: any = { data: [] }
+  let competitorPostsResult: any = { data: [] }
+  try {
+    ;[analyzedPostsResult, competitorPostsResult] = await Promise.all([
       supabaseAdmin
         .from('posts')
         .select(`*, metrics:post_metrics(*)`)
         .not('ai_analysis', 'is', null)
         .order('ai_analyzed_at', { ascending: false })
         .limit(6),
-
-      // Posts de referentes con análisis IA
       supabaseAdmin
         .from('competitor_posts')
         .select(`*, competitor:competitors(username, display_name)`)
@@ -65,6 +69,7 @@ export async function buildContentContext(): Promise<ContentContext> {
         .order('engagement_rate', { ascending: false })
         .limit(15),
     ])
+  } catch { /* columnas opcionales no disponibles aún */ }
 
   const recentPosts = (recentPostsResult.data || []) as PostWithMetrics[]
 

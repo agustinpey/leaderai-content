@@ -14,6 +14,8 @@ import { NextRequest } from 'next/server'
  * 3. Guarda el insight semanal en Supabase
  * 4. Crea notificación para el usuario
  */
+export const maxDuration = 60
+
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const force = searchParams.get('force') === 'true'

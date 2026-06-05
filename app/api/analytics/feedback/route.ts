@@ -80,16 +80,25 @@ Respondé con JSON exacto (sin texto adicional):
   "proxima_semana": "una sola recomendación prioritaria"
 }`
 
-  const client = new Anthropic({ apiKey })
-  const message = await client.messages.create({
-    model: 'claude-opus-4-8',
-    max_tokens: 1024,
-    messages: [{ role: 'user', content: prompt }],
-  })
+  let text = ''
+  try {
+    const client = new Anthropic({ apiKey })
+    const message = await client.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 1500,
+      messages: [{ role: 'user', content: prompt }],
+    })
+    text = message.content[0].type === 'text' ? message.content[0].text : ''
+  } catch (err: any) {
+    return Response.json({ error: `Error de IA: ${err?.message || 'desconocido'}` }, { status: 500 })
+  }
 
-  const text = message.content[0].type === 'text' ? message.content[0].text : ''
   const jsonMatch = text.match(/\{[\s\S]*\}/)
-  if (!jsonMatch) return Response.json({ error: 'No se pudo parsear la respuesta' }, { status: 500 })
+  if (!jsonMatch) return Response.json({ error: 'No se pudo parsear la respuesta de Claude' }, { status: 500 })
 
-  return Response.json(JSON.parse(jsonMatch[0]))
+  try {
+    return Response.json(JSON.parse(jsonMatch[0]))
+  } catch {
+    return Response.json({ error: 'JSON inválido en respuesta de Claude' }, { status: 500 })
+  }
 }
