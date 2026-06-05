@@ -3,13 +3,20 @@ import Anthropic from '@anthropic-ai/sdk'
 
 export const maxDuration = 60
 
-export async function POST() {
-  const { data: posts, error } = await supabaseAdmin
+export async function POST(req: Request) {
+  const body = await req.json().catch(() => ({}))
+  const { competitor_id } = body
+
+  let query = supabaseAdmin
     .from('competitor_posts')
     .select('*, competitor:competitors(username, follower_count, avg_engagement_rate)')
     .is('ai_topic', null)
     .order('scraped_at', { ascending: false })
     .limit(20)
+
+  if (competitor_id) query = query.eq('competitor_id', competitor_id)
+
+  const { data: posts, error } = await query
 
   if (error) return Response.json({ error: error.message }, { status: 500 })
   if (!posts?.length) return Response.json({ message: 'No hay posts pendientes de análisis', analyzed: 0 })

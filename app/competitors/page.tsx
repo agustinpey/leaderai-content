@@ -144,13 +144,18 @@ export default function CompetitorsPage() {
   }
 
   async function handleAnalyze() {
+    if (!selected) return
     setAnalyzing(true)
     setActionResult(null)
-    const res = await fetch('/api/competitors/analyze', { method: 'POST' })
+    const res = await fetch('/api/competitors/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ competitor_id: selected.id }),
+    })
     const data = await res.json()
     setAnalyzing(false)
     setActionResult(res.ok ? `✓ ${data.message}` : `Error: ${data.error}`)
-    if (selected) fetchPosts(selected.id)
+    fetchPosts(selected.id)
   }
 
   const filteredPosts = filterGap ? posts.filter((p) => p.ai_content_gap) : posts
