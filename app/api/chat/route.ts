@@ -50,33 +50,48 @@ ${contextStr}
 Respondés en español rioplatense, como Agustín habla.`
 }
 
+export const maxDuration = 60
+
 export async function POST(req: Request) {
   const { messages } = await req.json()
 
-  // Construir contexto en cada request (refleja el estado real de la cuenta)
-  const ctx = await buildContentContext()
-  const contextStr = formatContextForClaude(ctx)
-  const systemPrompt = getSystemPrompt(contextStr)
+  let ctx, contextStr, systemPrompt
+  try {
+    ctx = await buildContentContext()
+    contextStr = formatContextForClaude(ctx)
+    systemPrompt = getSystemPrompt(contextStr)
+  } catch (err: any) {
+    return new Response(`Error al cargar contexto: ${err?.message || 'desconocido'}`, { status: 500 })
+  }
 
-  const stream = await anthropic.messages.stream({
-    model: 'claude-opus-4-6',
-    max_tokens: 2048,
-    system: systemPrompt,
-    messages: messages.map((m: { role: string; content: string }) => ({
-      role: m.role,
-      content: m.content,
-    })),
-  })
+  let stream: any
+  try {
+    stream = await anthropic.messages.stream({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 2048,
+      system: systemPrompt,
+      messages: messages.map((m: { role: string; content: string }) => ({
+        role: m.role,
+        content: m.content,
+      })),
+    })
+  } catch (err: any) {
+    return new Response(`Error de IA: ${err?.message || 'desconocido'}`, { status: 500 })
+  }
 
   const readableStream = new ReadableStream({
     async start(controller) {
-      for await (const chunk of stream) {
-        if (
-          chunk.type === 'content_block_delta' &&
-          chunk.delta.type === 'text_delta'
-        ) {
-          controller.enqueue(new TextEncoder().encode(chunk.delta.text))
+      try {
+        for await (const chunk of stream) {
+          if (
+            chunk.type === 'content_block_delta' &&
+            chunk.delta.type === 'text_delta'
+          ) {
+            controller.enqueue(new TextEncoder().encode(chunk.delta.text))
+          }
         }
+      } catch {
+        // stream abortado por el cliente
       }
       controller.close()
     },
