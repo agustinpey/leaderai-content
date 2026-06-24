@@ -90,8 +90,11 @@ export async function POST(req: Request) {
             controller.enqueue(new TextEncoder().encode(chunk.delta.text))
           }
         }
-      } catch {
-        // stream abortado por el cliente
+      } catch (err: any) {
+        if (err?.name !== 'AbortError') {
+          const errMsg = `Error al generar respuesta: ${err?.message || 'desconocido'}`
+          controller.enqueue(new TextEncoder().encode(errMsg))
+        }
       }
       controller.close()
     },
